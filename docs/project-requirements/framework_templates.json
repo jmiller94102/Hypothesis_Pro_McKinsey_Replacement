@@ -1,0 +1,426 @@
+{
+  "_metadata": {
+    "description": "Strategic framework templates for MECE hypothesis tree generation",
+    "version": "1.0",
+    "usage": "Import into generate_hypothesis_tree tool to provide L1/L2 structure templates"
+  },
+  "frameworks": {
+    "scale_decision": {
+      "name": "Scale Decision Framework",
+      "description": "For evaluating whether to scale/expand an existing pilot or initiative",
+      "trigger_phrases": ["should we scale", "should we expand", "should we roll out", "should we deploy"],
+      "L1_categories": {
+        "DESIRABILITY": {
+          "label": "DESIRABILITY",
+          "question": "Is it worth doing?",
+          "description": "Evaluates whether the solution creates sufficient value to justify scaling",
+          "L2_branches": {
+            "CLINICAL_IMPACT": {
+              "label": "Clinical/Safety Impact",
+              "question": "Does it meaningfully improve outcomes?",
+              "suggested_L3": ["Outcome Improvement", "Response Time", "Severity Reduction"]
+            },
+            "FINANCIAL_IMPACT": {
+              "label": "Financial Impact",
+              "question": "Does the ROI justify the investment?",
+              "suggested_L3": ["Direct Cost Savings", "Indirect Cost Savings", "Revenue Protection"]
+            },
+            "STAKEHOLDER_VALUE": {
+              "label": "Stakeholder Value",
+              "question": "Do key stakeholders want and value this solution?",
+              "suggested_L3": ["End User Acceptance", "Staff Satisfaction", "Family/Customer Confidence"]
+            }
+          }
+        },
+        "FEASIBILITY": {
+          "label": "FEASIBILITY",
+          "question": "Can we actually do it?",
+          "description": "Evaluates organizational capability to implement at scale",
+          "L2_branches": {
+            "TECHNICAL_CAPABILITY": {
+              "label": "Technical Capability",
+              "question": "Can the technology be deployed reliably at scale?",
+              "suggested_L3": ["Infrastructure Readiness", "System Integration", "Vendor Reliability"]
+            },
+            "OPERATIONAL_CAPABILITY": {
+              "label": "Operational Capability",
+              "question": "Can staff effectively use and maintain the system?",
+              "suggested_L3": ["Training Requirements", "Workflow Integration", "Change Management Capacity"]
+            },
+            "RESOURCE_AVAILABILITY": {
+              "label": "Resource Availability",
+              "question": "Do we have the budget, time, and people to execute?",
+              "suggested_L3": ["Budget Allocation", "Timeline Feasibility", "Team Capacity"]
+            }
+          }
+        },
+        "VIABILITY": {
+          "label": "VIABILITY",
+          "question": "Will it work long-term?",
+          "description": "Evaluates sustainability, scalability, and risk of the solution",
+          "L2_branches": {
+            "SCALABILITY": {
+              "label": "Scalability",
+              "question": "Can this solution expand across the full portfolio?",
+              "suggested_L3": ["Standardization Potential", "Vendor Scale Capacity", "Regulatory Consistency"]
+            },
+            "SUSTAINABILITY": {
+              "label": "Sustainability",
+              "question": "Will benefits persist over time?",
+              "suggested_L3": ["Maintenance Costs", "Technology Evolution Risk", "Turnover Resilience"]
+            },
+            "RISK_PROFILE": {
+              "label": "Risk Profile",
+              "question": "What could go wrong and can we mitigate it?",
+              "suggested_L3": ["Privacy/Compliance Risk", "Technology Failure Risk", "Adoption Resistance Risk"]
+            }
+          }
+        }
+      }
+    },
+    "product_launch": {
+      "name": "Product Launch Framework",
+      "description": "For evaluating whether to launch a new product or service",
+      "trigger_phrases": ["should we launch", "should we build", "should we create", "new product"],
+      "L1_categories": {
+        "DESIRABILITY": {
+          "label": "DESIRABILITY",
+          "question": "Do customers want it?",
+          "description": "Evaluates market demand and customer value",
+          "L2_branches": {
+            "CUSTOMER_NEED": {
+              "label": "Customer Need",
+              "question": "Is there a real problem worth solving?",
+              "suggested_L3": ["Problem Severity", "Frequency of Problem", "Willingness to Pay"]
+            },
+            "MARKET_SIZE": {
+              "label": "Market Size",
+              "question": "Is the market large enough?",
+              "suggested_L3": ["Total Addressable Market", "Serviceable Market", "Growth Rate"]
+            },
+            "COMPETITIVE_POSITION": {
+              "label": "Competitive Position",
+              "question": "Can we win against alternatives?",
+              "suggested_L3": ["Differentiation", "Switching Costs", "Competitive Response"]
+            }
+          }
+        },
+        "FEASIBILITY": {
+          "label": "FEASIBILITY",
+          "question": "Can we build it?",
+          "description": "Evaluates technical and operational capability",
+          "L2_branches": {
+            "TECHNICAL_FEASIBILITY": {
+              "label": "Technical Feasibility",
+              "question": "Do we have the technology to build it?",
+              "suggested_L3": ["Core Technology Readiness", "Integration Complexity", "Technical Talent"]
+            },
+            "OPERATIONAL_FEASIBILITY": {
+              "label": "Operational Feasibility",
+              "question": "Can we deliver and support it?",
+              "suggested_L3": ["Go-to-Market Capability", "Support Infrastructure", "Partner Ecosystem"]
+            },
+            "RESOURCE_REQUIREMENTS": {
+              "label": "Resource Requirements",
+              "question": "Do we have the resources?",
+              "suggested_L3": ["Development Cost", "Time to Market", "Team Availability"]
+            }
+          }
+        },
+        "VIABILITY": {
+          "label": "VIABILITY",
+          "question": "Should we build it?",
+          "description": "Evaluates business model and strategic fit",
+          "L2_branches": {
+            "BUSINESS_MODEL": {
+              "label": "Business Model",
+              "question": "Can we make money?",
+              "suggested_L3": ["Revenue Model", "Unit Economics", "Path to Profitability"]
+            },
+            "STRATEGIC_FIT": {
+              "label": "Strategic Fit",
+              "question": "Does it align with our strategy?",
+              "suggested_L3": ["Core Competency Alignment", "Portfolio Fit", "Brand Alignment"]
+            },
+            "RISK_ASSESSMENT": {
+              "label": "Risk Assessment",
+              "question": "What are the key risks?",
+              "suggested_L3": ["Market Risk", "Execution Risk", "Financial Risk"]
+            }
+          }
+        }
+      }
+    },
+    "market_entry": {
+      "name": "Market Entry Framework",
+      "description": "For evaluating entry into a new market or geography (Porter's Five Forces adaptation)",
+      "trigger_phrases": ["should we enter", "new market", "expand to", "geographic expansion"],
+      "L1_categories": {
+        "MARKET_ATTRACTIVENESS": {
+          "label": "MARKET ATTRACTIVENESS",
+          "question": "Is the market worth entering?",
+          "description": "Evaluates the structural attractiveness of the market",
+          "L2_branches": {
+            "COMPETITIVE_RIVALRY": {
+              "label": "Competitive Rivalry",
+              "question": "How intense is competition?",
+              "suggested_L3": ["Number of Competitors", "Market Concentration", "Price Competition"]
+            },
+            "BARRIERS_TO_ENTRY": {
+              "label": "Barriers to Entry",
+              "question": "How hard is it to enter?",
+              "suggested_L3": ["Capital Requirements", "Regulatory Barriers", "Incumbent Advantages"]
+            },
+            "MARKET_DYNAMICS": {
+              "label": "Market Dynamics",
+              "question": "What are the growth prospects?",
+              "suggested_L3": ["Market Size", "Growth Rate", "Profitability Trends"]
+            }
+          }
+        },
+        "COMPETITIVE_POSITION": {
+          "label": "COMPETITIVE POSITION",
+          "question": "Can we compete effectively?",
+          "description": "Evaluates our ability to win in this market",
+          "L2_branches": {
+            "BUYER_POWER": {
+              "label": "Buyer Power",
+              "question": "How much leverage do customers have?",
+              "suggested_L3": ["Customer Concentration", "Switching Costs", "Price Sensitivity"]
+            },
+            "SUPPLIER_POWER": {
+              "label": "Supplier Power",
+              "question": "How much leverage do suppliers have?",
+              "suggested_L3": ["Supplier Concentration", "Input Differentiation", "Switching Costs"]
+            },
+            "SUBSTITUTE_THREATS": {
+              "label": "Substitute Threats",
+              "question": "What alternatives exist?",
+              "suggested_L3": ["Substitute Availability", "Price-Performance Ratio", "Switching Propensity"]
+            }
+          }
+        },
+        "EXECUTION_CAPABILITY": {
+          "label": "EXECUTION CAPABILITY",
+          "question": "Can we execute the entry?",
+          "description": "Evaluates our ability to successfully enter and compete",
+          "L2_branches": {
+            "LOCAL_CAPABILITY": {
+              "label": "Local Capability",
+              "question": "Do we have local expertise?",
+              "suggested_L3": ["Local Talent", "Partner Network", "Cultural Understanding"]
+            },
+            "INVESTMENT_REQUIREMENTS": {
+              "label": "Investment Requirements",
+              "question": "What investment is needed?",
+              "suggested_L3": ["Upfront Investment", "Time to Break-even", "Ongoing Commitment"]
+            },
+            "RISK_FACTORS": {
+              "label": "Risk Factors",
+              "question": "What could go wrong?",
+              "suggested_L3": ["Political Risk", "Currency Risk", "Regulatory Risk"]
+            }
+          }
+        }
+      }
+    },
+    "investment_decision": {
+      "name": "Investment Decision Framework",
+      "description": "For evaluating investment or acquisition opportunities",
+      "trigger_phrases": ["should we invest", "should we acquire", "should we buy", "M&A"],
+      "L1_categories": {
+        "STRATEGIC_VALUE": {
+          "label": "STRATEGIC VALUE",
+          "question": "Does it create strategic value?",
+          "description": "Evaluates strategic rationale for the investment",
+          "L2_branches": {
+            "STRATEGIC_FIT": {
+              "label": "Strategic Fit",
+              "question": "Does it align with our strategy?",
+              "suggested_L3": ["Core Business Alignment", "Capability Gap Fill", "Market Access"]
+            },
+            "SYNERGY_POTENTIAL": {
+              "label": "Synergy Potential",
+              "question": "What synergies can we capture?",
+              "suggested_L3": ["Revenue Synergies", "Cost Synergies", "Capability Synergies"]
+            },
+            "COMPETITIVE_IMPACT": {
+              "label": "Competitive Impact",
+              "question": "How does it affect our competitive position?",
+              "suggested_L3": ["Market Share Impact", "Competitive Response", "Defensive Value"]
+            }
+          }
+        },
+        "FINANCIAL_VALUE": {
+          "label": "FINANCIAL VALUE",
+          "question": "Does the math work?",
+          "description": "Evaluates financial returns and risks",
+          "L2_branches": {
+            "VALUATION": {
+              "label": "Valuation",
+              "question": "Is the price right?",
+              "suggested_L3": ["Standalone Value", "Synergy Value", "Price vs. Value Gap"]
+            },
+            "RETURN_PROFILE": {
+              "label": "Return Profile",
+              "question": "What returns can we expect?",
+              "suggested_L3": ["IRR/NPV", "Payback Period", "Risk-Adjusted Return"]
+            },
+            "FINANCING": {
+              "label": "Financing",
+              "question": "How do we fund it?",
+              "suggested_L3": ["Funding Sources", "Balance Sheet Impact", "Credit Rating Impact"]
+            }
+          }
+        },
+        "EXECUTION_RISK": {
+          "label": "EXECUTION RISK",
+          "question": "Can we execute successfully?",
+          "description": "Evaluates integration and execution risks",
+          "L2_branches": {
+            "INTEGRATION_COMPLEXITY": {
+              "label": "Integration Complexity",
+              "question": "How hard is integration?",
+              "suggested_L3": ["Cultural Fit", "Systems Integration", "Organization Design"]
+            },
+            "OPERATIONAL_RISK": {
+              "label": "Operational Risk",
+              "question": "What could go wrong operationally?",
+              "suggested_L3": ["Key Person Risk", "Customer Retention", "Supplier Continuity"]
+            },
+            "DEAL_RISK": {
+              "label": "Deal Risk",
+              "question": "What are the deal-specific risks?",
+              "suggested_L3": ["Due Diligence Gaps", "Regulatory Approval", "Competitive Bidding"]
+            }
+          }
+        }
+      }
+    },
+    "operations_improvement": {
+      "name": "Operations Improvement Framework",
+      "description": "For evaluating operational improvement initiatives",
+      "trigger_phrases": ["should we improve", "optimize", "operational excellence", "efficiency"],
+      "L1_categories": {
+        "COST": {
+          "label": "COST",
+          "question": "Does it reduce costs?",
+          "description": "Evaluates cost reduction potential",
+          "L2_branches": {
+            "DIRECT_COSTS": {
+              "label": "Direct Costs",
+              "question": "What direct savings are possible?",
+              "suggested_L3": ["Labor Savings", "Material Savings", "Equipment Savings"]
+            },
+            "INDIRECT_COSTS": {
+              "label": "Indirect Costs",
+              "question": "What indirect savings are possible?",
+              "suggested_L3": ["Overhead Reduction", "Error/Rework Reduction", "Inventory Reduction"]
+            },
+            "IMPLEMENTATION_COSTS": {
+              "label": "Implementation Costs",
+              "question": "What does it cost to implement?",
+              "suggested_L3": ["Upfront Investment", "Transition Costs", "Ongoing Costs"]
+            }
+          }
+        },
+        "QUALITY": {
+          "label": "QUALITY",
+          "question": "Does it improve quality?",
+          "description": "Evaluates quality and customer satisfaction impact",
+          "L2_branches": {
+            "OUTPUT_QUALITY": {
+              "label": "Output Quality",
+              "question": "Does it improve product/service quality?",
+              "suggested_L3": ["Defect Reduction", "Consistency Improvement", "Feature Enhancement"]
+            },
+            "PROCESS_QUALITY": {
+              "label": "Process Quality",
+              "question": "Does it improve process reliability?",
+              "suggested_L3": ["Process Stability", "Predictability", "Compliance"]
+            },
+            "CUSTOMER_IMPACT": {
+              "label": "Customer Impact",
+              "question": "Does it improve customer experience?",
+              "suggested_L3": ["Customer Satisfaction", "Net Promoter Score", "Complaint Reduction"]
+            }
+          }
+        },
+        "SPEED": {
+          "label": "SPEED",
+          "question": "Does it improve speed?",
+          "description": "Evaluates cycle time and responsiveness improvements",
+          "L2_branches": {
+            "CYCLE_TIME": {
+              "label": "Cycle Time",
+              "question": "Does it reduce cycle time?",
+              "suggested_L3": ["Lead Time Reduction", "Processing Time", "Wait Time Elimination"]
+            },
+            "RESPONSIVENESS": {
+              "label": "Responsiveness",
+              "question": "Does it improve responsiveness?",
+              "suggested_L3": ["Time to Market", "Customer Response Time", "Decision Speed"]
+            },
+            "FLEXIBILITY": {
+              "label": "Flexibility",
+              "question": "Does it improve flexibility?",
+              "suggested_L3": ["Volume Flexibility", "Mix Flexibility", "Change Adaptability"]
+            }
+          }
+        }
+      }
+    },
+    "custom": {
+      "name": "Custom Framework",
+      "description": "User-defined framework with custom L1 categories",
+      "trigger_phrases": ["using categories", "custom framework", "my own framework"],
+      "L1_categories": {},
+      "instructions": "When user specifies custom categories, validate for MECE compliance and generate appropriate L2 branches"
+    }
+  },
+  "L3_leaf_schema": {
+    "required_fields": ["label", "question", "metric_type"],
+    "optional_fields": ["target", "data_source", "components", "assessment_criteria"],
+    "metric_types": {
+      "quantitative": "Measurable with numbers (e.g., %, $, count)",
+      "qualitative": "Assessed through judgment, surveys, interviews",
+      "binary": "Yes/No determination"
+    }
+  },
+  "scoring": {
+    "scale": {
+      "min": 0,
+      "max": 10,
+      "anchors": {
+        "0-2": "No evidence / Major concerns",
+        "3-4": "Limited evidence / Significant gaps",
+        "5-6": "Moderate evidence / Some concerns",
+        "7-8": "Strong evidence / Minor gaps",
+        "9-10": "Conclusive evidence / Exceeds targets"
+      }
+    },
+    "weighting": {
+      "default": "equal",
+      "customizable": true
+    },
+    "rollup": "Weighted average from L3 → L2 → L1"
+  },
+  "decision_thresholds": {
+    "go": {
+      "condition": "All L1 dimensions score ≥7.0",
+      "label": "PROCEED / SCALE / LAUNCH"
+    },
+    "conditional_go": {
+      "condition": "All L1 dimensions score ≥5.0 with mitigation plans",
+      "label": "CONDITIONAL PROCEED"
+    },
+    "no_go": {
+      "condition": "Any L1 dimension scores <5.0 without mitigation path",
+      "label": "DO NOT PROCEED"
+    },
+    "needs_data": {
+      "condition": "Cannot score >50% of L3 leaves",
+      "label": "INSUFFICIENT DATA"
+    }
+  }
+}

@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+ENV/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/*.log
+*.log
+
+# Environment
+.env
+.env.local
+
+# Storage (keep structure, ignore project contents)
+storage/projects/*/
+
+# Node modules (for UI)
+hypothesis-tree-ui/node_modules/
+hypothesis-tree-ui/.next/
+hypothesis-tree-ui/out/
+hypothesis-tree-ui/build/
+
+# Misc
+.cache/
+temp/
+tmp/

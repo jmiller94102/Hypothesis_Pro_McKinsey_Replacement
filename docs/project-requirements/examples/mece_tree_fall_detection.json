@@ -1,0 +1,295 @@
+{
+  "question": "Should we scale the deployment of computer vision fall detection in senior living?",
+  "framework": "MECE Issue Tree",
+  "framework_type": "scale_decision",
+  "version": "1.0",
+  "date": "2025-11-20",
+  "levels": 3,
+  "tree": {
+    "L1_DESIRABILITY": {
+      "label": "DESIRABILITY",
+      "question": "Is it worth doing?",
+      "description": "Evaluates whether the solution creates sufficient value to justify scaling",
+      "branches": {
+        "L2_CLINICAL_IMPACT": {
+          "label": "Clinical/Safety Impact",
+          "question": "Does it meaningfully improve resident outcomes?",
+          "leaves": {
+            "L3_FALL_REDUCTION": {
+              "label": "Fall Incident Reduction",
+              "question": "What is the measured reduction in fall incidents?",
+              "metric_type": "quantitative",
+              "target": ">25% reduction vs baseline",
+              "data_source": "Pilot incident logs"
+            },
+            "L3_RESPONSE_TIME": {
+              "label": "Response Time Improvement",
+              "question": "How much faster do staff respond to falls?",
+              "metric_type": "quantitative",
+              "target": ">50% faster response",
+              "data_source": "Time-to-response logs"
+            },
+            "L3_INJURY_SEVERITY": {
+              "label": "Injury Severity Reduction",
+              "question": "Are fall-related injuries less severe when detected?",
+              "metric_type": "quantitative",
+              "target": "Reduction in ER transfers, hospitalizations",
+              "data_source": "Medical records, insurance claims"
+            }
+          }
+        },
+        "L2_FINANCIAL_IMPACT": {
+          "label": "Financial Impact",
+          "question": "Does the ROI justify the investment?",
+          "leaves": {
+            "L3_DIRECT_SAVINGS": {
+              "label": "Direct Cost Savings",
+              "question": "What hard dollar savings result from reduced incidents?",
+              "metric_type": "quantitative",
+              "components": ["Liability reduction", "Insurance premium reduction", "Avoided medical costs"],
+              "data_source": "Finance, legal, insurance records"
+            },
+            "L3_INDIRECT_SAVINGS": {
+              "label": "Indirect Cost Savings",
+              "question": "What operational efficiencies are gained?",
+              "metric_type": "quantitative",
+              "components": ["Staff time savings", "Reduced false alarm fatigue", "Night shift optimization"],
+              "data_source": "Staff time studies, workflow analysis"
+            },
+            "L3_REVENUE_PROTECTION": {
+              "label": "Revenue Protection",
+              "question": "Does the technology protect or enhance revenue?",
+              "metric_type": "quantitative",
+              "components": ["Occupancy impact", "Reputation/referral effect", "Premium pricing potential"],
+              "data_source": "Occupancy data, family surveys, market research"
+            }
+          }
+        },
+        "L2_STAKEHOLDER_VALUE": {
+          "label": "Stakeholder Value",
+          "question": "Do key stakeholders want and value this solution?",
+          "leaves": {
+            "L3_RESIDENT_ACCEPTANCE": {
+              "label": "Resident Acceptance",
+              "question": "Do residents accept and feel comfortable with the technology?",
+              "metric_type": "qualitative",
+              "target": ">70% acceptance rate",
+              "data_source": "Resident surveys, family feedback"
+            },
+            "L3_STAFF_SATISFACTION": {
+              "label": "Staff Satisfaction",
+              "question": "Does staff find the system helpful vs burdensome?",
+              "metric_type": "qualitative",
+              "target": ">75% positive sentiment",
+              "data_source": "Weekly pulse surveys"
+            },
+            "L3_FAMILY_CONFIDENCE": {
+              "label": "Family Confidence",
+              "question": "Does the technology increase family trust and peace of mind?",
+              "metric_type": "qualitative",
+              "target": "Net positive impact on family NPS",
+              "data_source": "Family surveys, move-in decision factors"
+            }
+          }
+        }
+      }
+    },
+    "L1_FEASIBILITY": {
+      "label": "FEASIBILITY",
+      "question": "Can we actually do it?",
+      "description": "Evaluates organizational capability to implement at scale",
+      "branches": {
+        "L2_TECHNICAL_CAPABILITY": {
+          "label": "Technical Capability",
+          "question": "Can the technology be deployed reliably at scale?",
+          "leaves": {
+            "L3_INFRASTRUCTURE_READINESS": {
+              "label": "Infrastructure Readiness",
+              "question": "Do facilities have required infrastructure (WiFi, power, mounting)?",
+              "metric_type": "quantitative",
+              "target": ">80% of facilities ready or easily upgradeable",
+              "data_source": "Facility assessments, IT audits"
+            },
+            "L3_SYSTEM_INTEGRATION": {
+              "label": "System Integration",
+              "question": "Can the solution integrate with existing nurse call, EHR, and alerting systems?",
+              "metric_type": "binary",
+              "target": "Proven integration with major systems",
+              "data_source": "Technical documentation, pilot integration testing"
+            },
+            "L3_VENDOR_RELIABILITY": {
+              "label": "Vendor Reliability",
+              "question": "Is the vendor stable and capable of supporting scale?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Financial stability", "Support SLAs", "Uptime history", "Roadmap alignment"],
+              "data_source": "Vendor due diligence, pilot support experience"
+            }
+          }
+        },
+        "L2_OPERATIONAL_CAPABILITY": {
+          "label": "Operational Capability",
+          "question": "Can staff effectively use and maintain the system?",
+          "leaves": {
+            "L3_TRAINING_REQUIREMENTS": {
+              "label": "Training Requirements",
+              "question": "What training burden does deployment create?",
+              "metric_type": "quantitative",
+              "target": "<4 hours initial training, <1 hour ongoing/year",
+              "data_source": "Pilot training logs, competency assessments"
+            },
+            "L3_WORKFLOW_INTEGRATION": {
+              "label": "Workflow Integration",
+              "question": "Does the system fit naturally into existing care workflows?",
+              "metric_type": "qualitative",
+              "target": "Minimal workflow disruption reported",
+              "data_source": "Staff interviews, workflow observation"
+            },
+            "L3_CHANGE_CAPACITY": {
+              "label": "Change Management Capacity",
+              "question": "Do facilities have bandwidth to absorb this change?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Concurrent initiatives", "Leadership bandwidth", "Staff turnover rates"],
+              "data_source": "Facility assessments, leadership interviews"
+            }
+          }
+        },
+        "L2_RESOURCE_AVAILABILITY": {
+          "label": "Resource Availability",
+          "question": "Do we have the budget, time, and people to execute?",
+          "leaves": {
+            "L3_BUDGET_ALLOCATION": {
+              "label": "Budget Allocation",
+              "question": "Is capital and OpEx budget available for scaled deployment?",
+              "metric_type": "quantitative",
+              "components": ["CapEx per facility", "Ongoing OpEx", "Training costs"],
+              "data_source": "Finance, vendor pricing, pilot cost actuals"
+            },
+            "L3_TIMELINE_FEASIBILITY": {
+              "label": "Timeline Feasibility",
+              "question": "Can we deploy within strategic planning windows?",
+              "metric_type": "quantitative",
+              "target": "Define deployment velocity (facilities/month)",
+              "data_source": "Pilot deployment timelines, vendor capacity"
+            },
+            "L3_TEAM_CAPACITY": {
+              "label": "Internal Team Capacity",
+              "question": "Do we have project management and technical resources to oversee rollout?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["PM availability", "IT support capacity", "Vendor management bandwidth"],
+              "data_source": "Resource planning, HR"
+            }
+          }
+        }
+      }
+    },
+    "L1_VIABILITY": {
+      "label": "VIABILITY",
+      "question": "Will it work long-term?",
+      "description": "Evaluates sustainability, scalability, and risk of the solution",
+      "branches": {
+        "L2_SCALABILITY": {
+          "label": "Scalability",
+          "question": "Can this solution expand across the full portfolio?",
+          "leaves": {
+            "L3_STANDARDIZATION_POTENTIAL": {
+              "label": "Standardization Potential",
+              "question": "Can we create a repeatable playbook for deployment?",
+              "metric_type": "qualitative",
+              "target": "80% of deployment follows standard process",
+              "data_source": "Pilot learnings, facility type analysis"
+            },
+            "L3_VENDOR_SCALE_CAPACITY": {
+              "label": "Vendor Scale Capacity",
+              "question": "Can the vendor support deployment at 100+ facilities/year?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Installation capacity", "Support team size", "Hardware supply chain"],
+              "data_source": "Vendor discussions, contract negotiations"
+            },
+            "L3_REGULATORY_CONSISTENCY": {
+              "label": "Regulatory Consistency",
+              "question": "Are there state/regional regulatory barriers to scaling?",
+              "metric_type": "qualitative",
+              "target": "No blocking regulatory issues identified",
+              "data_source": "Legal review, state-by-state analysis"
+            }
+          }
+        },
+        "L2_SUSTAINABILITY": {
+          "label": "Sustainability",
+          "question": "Will benefits persist over time?",
+          "leaves": {
+            "L3_MAINTENANCE_COSTS": {
+              "label": "Ongoing Maintenance Costs",
+              "question": "What are the true ongoing costs to maintain the system?",
+              "metric_type": "quantitative",
+              "components": ["Software licensing", "Hardware replacement", "Support contracts"],
+              "data_source": "Vendor contracts, pilot maintenance logs"
+            },
+            "L3_TECHNOLOGY_EVOLUTION": {
+              "label": "Technology Evolution Risk",
+              "question": "Will this technology become obsolete or outpaced?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Vendor roadmap", "Competitive landscape", "AI/ML advancement rate"],
+              "data_source": "Industry research, vendor strategy sessions"
+            },
+            "L3_TURNOVER_RESILIENCE": {
+              "label": "Staff Turnover Resilience",
+              "question": "Can the system maintain effectiveness despite staff turnover?",
+              "metric_type": "qualitative",
+              "target": "New staff proficient within 1 week",
+              "data_source": "Training effectiveness studies, pilot turnover impact"
+            }
+          }
+        },
+        "L2_RISK_PROFILE": {
+          "label": "Risk Profile",
+          "question": "What could go wrong and can we mitigate it?",
+          "leaves": {
+            "L3_PRIVACY_COMPLIANCE_RISK": {
+              "label": "Privacy/Compliance Risk",
+              "question": "Are there HIPAA, state privacy, or resident rights concerns?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Data handling practices", "Consent processes", "Audit trail capabilities"],
+              "data_source": "Legal review, compliance assessment"
+            },
+            "L3_TECHNOLOGY_FAILURE_RISK": {
+              "label": "Technology Failure Risk",
+              "question": "What happens when the system fails?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Uptime SLAs", "Failover procedures", "False positive/negative rates"],
+              "data_source": "Pilot reliability data, vendor SLAs"
+            },
+            "L3_ADOPTION_RESISTANCE_RISK": {
+              "label": "Adoption/Resistance Risk",
+              "question": "What is the risk of staff or resident rejection at scale?",
+              "metric_type": "qualitative",
+              "assessment_criteria": ["Pilot adoption curves", "Resistance patterns", "Union considerations"],
+              "data_source": "Pilot feedback, staff sentiment tracking"
+            }
+          }
+        }
+      }
+    }
+  },
+  "metadata": {
+    "mece_validation": {
+      "level_1": "Desirability (value) vs Feasibility (capability) vs Viability (sustainability) are mutually exclusive and collectively exhaustive for strategic decisions",
+      "level_2": "Each L1 branch decomposed into 3 non-overlapping dimensions that fully cover the parent question",
+      "level_3": "Specific, measurable questions that can be answered with data"
+    },
+    "usage_instructions": {
+      "step_1": "Score each L3 leaf on a 0-10 scale based on available data",
+      "step_2": "Weight L3 leaves within each L2 branch (default: equal weight)",
+      "step_3": "Roll up L3 scores to L2 averages",
+      "step_4": "Weight L2 branches within each L1 (default: equal weight)",
+      "step_5": "Roll up to L1 scores (Desirability, Feasibility, Viability)",
+      "step_6": "Apply decision threshold (e.g., all three >7 = SCALE, any <5 = NO-GO)"
+    },
+    "decision_logic": {
+      "scale": "All L1 dimensions score ≥7.0",
+      "conditional_scale": "All L1 dimensions score ≥5.0 with clear mitigation plans for gaps",
+      "no_go": "Any L1 dimension scores <5.0 with no viable mitigation path",
+      "needs_more_data": "Insufficient data to score >50% of L3 leaves"
+    }
+  }
+}

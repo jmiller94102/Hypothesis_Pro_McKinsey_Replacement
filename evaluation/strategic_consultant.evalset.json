@@ -1,0 +1,141 @@
+{
+  "name": "Strategic Consultant Agent Evaluation",
+  "description": "Test cases for the HypothesisTree Pro strategic consultant agent",
+  "test_cases": [
+    {
+      "id": "tc-001-scale-decision",
+      "name": "Framework Selection - Scale Decision",
+      "description": "Test that the agent correctly identifies and uses the scale_decision framework",
+      "input": {
+        "user_message": "Should we scale deployment of our Computer Vision Fall Detection system in Senior Living facilities?"
+      },
+      "expected_outputs": {
+        "framework_used": "scale_decision",
+        "L1_categories": ["DESIRABILITY", "FEASIBILITY", "VIABILITY"],
+        "has_hypothesis_tree": true,
+        "has_L3_leaves": true
+      },
+      "evaluation_criteria": [
+        "Framework correctly identified as scale_decision",
+        "All three L1 categories present (Desirability, Feasibility, Viability)",
+        "Hypothesis tree structure is valid",
+        "L3 leaves contain metric_type, target, and data_source"
+      ]
+    },
+    {
+      "id": "tc-002-market-entry",
+      "name": "Framework Selection - Market Entry",
+      "description": "Test that the agent correctly uses market_entry framework",
+      "input": {
+        "user_message": "Should we enter the European eldercare market with our telehealth platform?"
+      },
+      "expected_outputs": {
+        "framework_used": "market_entry",
+        "L1_categories": [
+          "MARKET_ATTRACTIVENESS",
+          "COMPETITIVE_DYNAMICS",
+          "ENTRY_BARRIERS"
+        ],
+        "has_hypothesis_tree": true
+      },
+      "evaluation_criteria": [
+        "Framework correctly identified as market_entry",
+        "Market attractiveness analysis present",
+        "Competitive dynamics considered",
+        "Entry barriers evaluated"
+      ]
+    },
+    {
+      "id": "tc-003-product-launch",
+      "name": "Framework Selection - Product Launch",
+      "description": "Test that the agent correctly uses product_launch framework",
+      "input": {
+        "user_message": "Should we launch a new AI-powered medication adherence tracking product for chronic disease patients?"
+      },
+      "expected_outputs": {
+        "framework_used": "product_launch",
+        "L1_categories": [
+          "MARKET_ATTRACTIVENESS",
+          "COMPETITIVE_POSITION",
+          "INTERNAL_CAPABILITIES"
+        ],
+        "has_hypothesis_tree": true
+      },
+      "evaluation_criteria": [
+        "Framework correctly identified as product_launch",
+        "Market attractiveness assessed",
+        "Competitive position analyzed",
+        "Internal capabilities reviewed"
+      ]
+    },
+    {
+      "id": "tc-004-mece-validation",
+      "name": "MECE Validation Triggered",
+      "description": "Test that MECE validation is performed and detects issues",
+      "input": {
+        "user_message": "Should we expand our wearable health monitoring devices? Analyze using custom categories: Revenue, Financial Impact, and Market Size"
+      },
+      "expected_outputs": {
+        "framework_used": "custom",
+        "validation_performed": true,
+        "mece_issues_detected": true,
+        "overlap_categories": ["Revenue", "Financial Impact"]
+      },
+      "evaluation_criteria": [
+        "MECE validation is triggered",
+        "Overlap between Revenue and Financial Impact is detected",
+        "Suggestions for improvement are provided"
+      ]
+    },
+    {
+      "id": "tc-005-prioritization-matrix",
+      "name": "Prioritization with 2x2 Matrix",
+      "description": "Test that 2x2 prioritization matrix is generated",
+      "input": {
+        "user_message": "What are the top priority hypotheses to test first for scaling fall detection in senior living?"
+      },
+      "expected_outputs": {
+        "has_priority_matrix": true,
+        "matrix_type": "prioritization",
+        "has_quadrants": true,
+        "has_recommendations": true
+      },
+      "evaluation_criteria": [
+        "2x2 matrix is generated",
+        "Matrix type is prioritization (Impact/Effort)",
+        "All four quadrants are populated",
+        "Recommendations include Quick Wins first"
+      ]
+    },
+    {
+      "id": "tc-006-full-workflow",
+      "name": "Complete Research → Analysis → Prioritization Workflow",
+      "description": "Test that the full three-phase workflow executes correctly",
+      "input": {
+        "user_message": "Should we invest in acquiring a telemedicine startup specializing in rural healthcare?"
+      },
+      "expected_outputs": {
+        "research_performed": true,
+        "hypothesis_tree_generated": true,
+        "mece_validated": true,
+        "priority_matrix_created": true,
+        "framework_used": "investment_decision"
+      },
+      "evaluation_criteria": [
+        "Market research is conducted",
+        "Competitor research is conducted",
+        "Hypothesis tree is generated using investment_decision framework",
+        "MECE validation passes",
+        "Priority matrix is created",
+        "All phases complete successfully"
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created": "2025-11-23",
+    "author": "Strategic Consultant Agent Team",
+    "course": "Kaggle 5-Day AI Agents Course",
+    "agent_version": "0.1.0"
+  }
+}

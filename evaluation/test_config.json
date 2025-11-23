@@ -1,0 +1,47 @@
+{
+  "evaluation_config": {
+    "name": "Strategic Consultant Agent Evaluation Configuration",
+    "description": "Configuration for evaluating the HypothesisTree Pro agent",
+    "version": "1.0",
+    "passing_criteria": {
+      "minimum_pass_rate": 0.8,
+      "description": "At least 80% of test cases must pass for the evaluation to be considered successful"
+    }
+  },
+  "agent_config": {
+    "agent_name": "strategic_analyzer",
+    "agent_path": "strategic_consultant_agent.agent",
+    "model": "gemini-2.0-flash",
+    "timeout_seconds": 300
+  },
+  "evaluation_metrics": {
+    "framework_selection_accuracy": {
+      "weight": 0.3,
+      "description": "Accuracy of selecting the correct framework for the question"
+    },
+    "mece_compliance": {
+      "weight": 0.25,
+      "description": "Compliance with MECE principles in hypothesis trees"
+    },
+    "completeness": {
+      "weight": 0.25,
+      "description": "Completeness of the analysis (all components present)"
+    },
+    "tool_usage": {
+      "weight": 0.2,
+      "description": "Correct usage of tools and multi-agent workflow"
+    }
+  },
+  "test_case_config": {
+    "max_retries": 2,
+    "retry_on_failure": true,
+    "log_all_outputs": true,
+    "save_intermediate_results": true
+  },
+  "output_config": {
+    "save_results_to": "evaluation/results",
+    "detailed_report": true,
+    "include_agent_traces": true,
+    "include_tool_calls": true
+  }
+}
