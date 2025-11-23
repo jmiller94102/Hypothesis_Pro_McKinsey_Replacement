@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MainTreeView } from '@/components/layout/MainTreeView';
 import { DebugPanel } from '@/components/layout/DebugPanel';
+import { TreeControls } from '@/components/layout/TreeControls';
 import { api } from '@/lib/api-client';
 import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, NodeLevel } from '@/lib/types';
 
@@ -20,6 +21,8 @@ function EditorContent() {
   const [meceStatus, setMeceStatus] = useState<MECEValidationResult | null>(null);
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [zoom, setZoom] = useState(1);
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (projectName) {
@@ -212,6 +215,59 @@ function EditorContent() {
     router.push('/');
   }
 
+  // Collapse/Expand all nodes at a level
+  function handleCollapseAll(level: 'L1' | 'L2' | 'L3') {
+    if (!tree) return;
+    const newExpanded = new Set<string>();
+
+    // Keep nodes expanded if they're above the target level
+    if (level === 'L3' || level === 'L2') {
+      Object.keys(tree.tree).forEach((l1Key) => {
+        newExpanded.add(l1Key); // Keep L1 expanded
+        if (level === 'L3') {
+          Object.keys(tree.tree[l1Key].L2_branches || {}).forEach((l2Key) => {
+            newExpanded.add(`${l1Key}-${l2Key}`); // Keep L2 expanded when collapsing L3
+          });
+        }
+      });
+    }
+
+    setExpandedNodes(newExpanded);
+    addDebugLog(`Collapsed all ${level} nodes`, 'info');
+  }
+
+  function handleExpandAll(level: 'L1' | 'L2' | 'L3') {
+    if (!tree) return;
+    const newExpanded = new Set<string>();
+
+    Object.entries(tree.tree).forEach(([l1Key, l1]) => {
+      newExpanded.add(l1Key); // Expand all L1
+
+      if (level === 'L2' || level === 'L3') {
+        Object.keys(l1.L2_branches || {}).forEach((l2Key) => {
+          newExpanded.add(`${l1Key}-${l2Key}`); // Expand all L2
+        });
+      }
+    });
+
+    setExpandedNodes(newExpanded);
+    addDebugLog(`Expanded all ${level} nodes`, 'info');
+  }
+
+  // Zoom controls
+  function handleZoomIn() {
+    setZoom((prev) => Math.min(2, prev + 0.1));
+  }
+
+  function handleZoomOut() {
+    setZoom((prev) => Math.max(0.5, prev - 0.1));
+  }
+
+  function handleZoomReset() {
+    setZoom(1);
+    addDebugLog('Reset zoom to 100%', 'info');
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
@@ -251,14 +307,27 @@ function EditorContent() {
         onGoHome={handleGoHome}
       />
 
-      {/* Right Side - Main + Debug */}
+      {/* Right Side - Controls + Main + Debug */}
       <div className="flex-1 flex flex-col">
-        {/* Main Tree View - Scrollable X/Y */}
+        {/* Tree Controls - Collapse/Expand and Zoom */}
+        <TreeControls
+          onCollapseAll={handleCollapseAll}
+          onExpandAll={handleExpandAll}
+          zoom={zoom}
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onZoomReset={handleZoomReset}
+        />
+
+        {/* Main Tree View - Scrollable X/Y with Zoom */}
         <MainTreeView
           tree={tree}
           onUpdateNode={handleUpdateNode}
           onDeleteNode={handleDeleteNode}
           onAddNode={handleAddNode}
+          zoom={zoom}
+          onZoomChange={setZoom}
+          expandedNodes={expandedNodes}
         />
 
         {/* Debug Panel - Collapsible bottom */}

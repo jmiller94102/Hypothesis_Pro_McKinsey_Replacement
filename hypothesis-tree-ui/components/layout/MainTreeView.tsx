@@ -1,7 +1,8 @@
 /**
- * Main tree visualization with independent X/Y scrolling
+ * Main tree visualization with independent X/Y scrolling and zoom
  */
 
+import { useRef, useEffect } from 'react';
 import { TreeNode } from '../tree/TreeNode';
 import type { HypothesisTree, NodeLevel } from '@/lib/types';
 
@@ -10,6 +11,9 @@ interface MainTreeViewProps {
   onUpdateNode: (path: string[], data: any) => void;
   onDeleteNode: (path: string[]) => void;
   onAddNode: (path: string[], level: NodeLevel) => void;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
+  expandedNodes: Set<string>;
 }
 
 export function MainTreeView({
@@ -17,7 +21,30 @@ export function MainTreeView({
   onUpdateNode,
   onDeleteNode,
   onAddNode,
+  zoom,
+  onZoomChange,
+  expandedNodes,
 }: MainTreeViewProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Mouse wheel zoom
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        const newZoom = Math.max(0.5, Math.min(2, zoom + delta));
+        onZoomChange(newZoom);
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { passive: false });
+    return () => container.removeEventListener('wheel', handleWheel);
+  }, [zoom, onZoomChange]);
+
   if (!tree) {
     return (
       <div className="flex-1 flex items-center justify-center bg-gray-900 text-gray-500">
@@ -30,9 +57,12 @@ export function MainTreeView({
   }
 
   return (
-    <div className="flex-1 overflow-auto bg-gray-900">
-      {/* Scrollable container - independent X/Y scroll */}
-      <div className="p-8 min-w-max">
+    <div ref={containerRef} className="flex-1 overflow-auto bg-gray-900">
+      {/* Scrollable container with zoom - independent X/Y scroll */}
+      <div
+        className="p-8 min-w-max origin-top-left transition-transform"
+        style={{ transform: `scale(${zoom})` }}
+      >
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-2">{tree.problem}</h1>
           <p className="text-sm text-gray-400">
@@ -54,6 +84,7 @@ export function MainTreeView({
               onUpdate={onUpdateNode}
               onDelete={onDeleteNode}
               onAdd={onAddNode}
+              expandedNodes={expandedNodes}
             />
           ))}
         </div>

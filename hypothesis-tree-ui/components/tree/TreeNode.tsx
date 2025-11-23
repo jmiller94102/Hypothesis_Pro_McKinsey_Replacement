@@ -2,7 +2,7 @@
  * TreeNode component with visual differentiation and inline editing
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { InlineEditor } from './InlineEditor';
 import type { L1Category, L2Branch, L3Leaf, NodeLevel } from '@/lib/types';
 
@@ -13,12 +13,21 @@ interface TreeNodeProps {
   onUpdate: (path: string[], data: any) => void;
   onDelete: (path: string[]) => void;
   onAdd: (path: string[], level: NodeLevel) => void;
+  expandedNodes?: Set<string>;
 }
 
-export function TreeNode({ level, data, path, onUpdate, onDelete, onAdd }: TreeNodeProps) {
+export function TreeNode({ level, data, path, onUpdate, onDelete, onAdd, expandedNodes }: TreeNodeProps) {
+  const nodeKey = path.join('-');
   const [isExpanded, setIsExpanded] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Sync with parent expansion state
+  useEffect(() => {
+    if (expandedNodes) {
+      setIsExpanded(expandedNodes.has(nodeKey));
+    }
+  }, [expandedNodes, nodeKey]);
 
   // Visual styles by level
   const levelStyles = {
@@ -142,6 +151,7 @@ export function TreeNode({ level, data, path, onUpdate, onDelete, onAdd }: TreeN
                 onUpdate={onUpdate}
                 onDelete={onDelete}
                 onAdd={onAdd}
+                expandedNodes={expandedNodes}
               />
             ))}
 
@@ -155,6 +165,7 @@ export function TreeNode({ level, data, path, onUpdate, onDelete, onAdd }: TreeN
                 onUpdate={onUpdate}
                 onDelete={onDelete}
                 onAdd={onAdd}
+                expandedNodes={expandedNodes}
               />
             ))}
         </div>
