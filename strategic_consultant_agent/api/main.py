@@ -13,7 +13,7 @@ from typing import Any, Optional
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
-from strategic_consultant_agent.tools.framework_loader import FrameworkTemplateLoader
+from strategic_consultant_agent.tools.framework_loader import FrameworkLoader
 
 app = FastAPI(title="HypothesisTree Pro API", version="1.0.0")
 
@@ -312,13 +312,13 @@ async def list_versions(project_name: str):
 async def list_frameworks():
     """List all available framework templates."""
     try:
-        loader = FrameworkTemplateLoader()
-        frameworks = loader.get_all_framework_names()
+        loader = FrameworkLoader()
+        frameworks = loader.list_frameworks()
 
         # Get detailed info for each framework
         framework_details = []
         for name in frameworks:
-            template = loader.get_framework_by_name(name)
+            template = loader.get_framework(name)
             if template:
                 framework_details.append({
                     "name": name,
