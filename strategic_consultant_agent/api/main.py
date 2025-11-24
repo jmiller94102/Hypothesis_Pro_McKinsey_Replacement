@@ -15,7 +15,6 @@ import asyncio
 import uuid
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
-from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
 from strategic_consultant_agent.tools.framework_loader import FrameworkLoader
 from strategic_consultant_agent.tools.persistence import save_analysis, load_analysis, _sanitize_filename
 import re
@@ -277,85 +276,45 @@ async def generate_tree_stream(problem: str, framework: str):
                 )
                 yield send_progress("save_cache", "✓ Research cached", 65)
 
-            # Stage 4: Generate tree with MECE validation loop
-            yield send_progress("generate_tree", "Generating hypothesis tree with LLM...", 70)
+            # Stage 4: Generate tree with incremental MECE validation
+            # Note: Validation now happens inside generate_hypothesis_tree with memory/feedback
+            yield send_progress("generate_tree", "Generating hypothesis tree with incremental validation...", 70)
             await asyncio.sleep(0.1)
 
-            # Import MECE validator for loop
-            from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
+            # Generate tree (validation happens incrementally during generation)
+            loop_executor = asyncio.get_event_loop()
+            tree = await loop_executor.run_in_executor(
+                None,
+                generate_hypothesis_tree,
+                problem,
+                framework,
+                None,  # custom_l1_categories
+                market_research,
+                competitor_research,
+                True  # use_llm_generation
+            )
 
-            max_iterations = 3
-            tree = None
-            validation_result = None
+            # Check validation results from metadata
+            validation_results = tree.get("metadata", {}).get("validation_results", {})
+            all_passed = validation_results.get("all_passed", False)
 
-            for iteration in range(1, max_iterations + 1):
-                yield send_progress(
-                    "mece_loop",
-                    f"Iteration {iteration}/{max_iterations}: Generating tree...",
-                    70 + (iteration - 1) * 10
-                )
-
-                # Generate tree
-                loop_executor = asyncio.get_event_loop()
-                tree = await loop_executor.run_in_executor(
-                    None,
-                    generate_hypothesis_tree,
-                    problem,
-                    framework,
-                    market_research,
-                    competitor_research,
-                    True  # use_llm_generation
-                )
-
-                yield send_progress(
-                    "mece_loop",
-                    f"Iteration {iteration}/{max_iterations}: Validating MECE compliance...",
-                    75 + (iteration - 1) * 10
-                )
-                await asyncio.sleep(0.1)
-
-                # Validate MECE
-                validation_result = await loop_executor.run_in_executor(
-                    None,
-                    validate_mece_structure,
-                    tree
-                )
-
-                if validation_result["is_mece"]:
-                    # Check if there are warnings (gaps are now soft warnings)
-                    num_warnings = len(validation_result.get("warnings", []))
-                    if num_warnings > 0:
-                        yield send_progress(
-                            "mece_loop",
-                            f"✓ MECE validation passed on iteration {iteration} ({num_warnings} optional suggestions available)",
-                            80 + (iteration - 1) * 10
-                        )
-                    else:
-                        yield send_progress(
-                            "mece_loop",
-                            f"✓ MECE validation passed on iteration {iteration}",
-                            80 + (iteration - 1) * 10
-                        )
-                    break
-                else:
-                    # Report hard failures only (overlaps and level_inconsistencies)
-                    num_overlaps = len(validation_result["issues"]["overlaps"])
-                    num_inconsistencies = len(validation_result["issues"]["level_inconsistencies"])
-                    yield send_progress(
-                        "mece_loop",
-                        f"⚠ Iteration {iteration}: Found {num_overlaps} overlaps, {num_inconsistencies} inconsistencies. Regenerating...",
-                        75 + (iteration - 1) * 10
-                    )
-                    await asyncio.sleep(0.1)
-
-            # Final validation status
-            if validation_result and validation_result["is_mece"]:
-                yield send_progress("mece_loop", "✓ Final tree passes MECE validation", 95)
+            if all_passed:
+                yield send_progress("mece_validation", "✓ All MECE validations passed", 90)
             else:
+                # Report which components had issues
+                l2_validation = validation_results.get("l2_validation", {})
+                l3_validation = validation_results.get("l3_validation", {})
+
+                failed_l1_count = sum(1 for v in l2_validation.get("l1_results", {}).values() if not v.get("is_mece", True))
+                failed_l2_count = sum(
+                    sum(1 for l2_result in l1_l3.get("l2_results", {}).values() if not l2_result.get("is_mece", True))
+                    for l1_l3 in l3_validation.values()
+                )
+
                 yield send_progress(
-                    "mece_loop",
-                    f"⚠ Max iterations reached. Tree has validation issues (see MECE button for details)",
-                    95
+                    "mece_validation",
+                    f"⚠ Validation: {failed_l1_count} L1 categories, {failed_l2_count} L2 branches had issues after max attempts",
+                    90
                 )
 
             yield send_progress("generate_tree", "✓ Tree generation complete", 95)
@@ -477,12 +436,14 @@ async def generate_tree(request: TreeGenerateRequest):
 
 @app.post("/api/tree/validate-mece")
 async def validate_mece(tree: dict[str, Any]):
-    """Validate MECE compliance."""
+    """Validate MECE compliance (for manual validation via UI button)."""
     try:
+        from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
         result = validate_mece_structure(tree)
         return {
             "is_mece": result["is_mece"],
             "issues": result["issues"],
+            "warnings": result.get("warnings", []),
             "suggestions": result["suggestions"],
             "timestamp": datetime.now().isoformat(),
             "status": "success"

@@ -8,6 +8,8 @@ from strategic_consultant_agent.tools.llm_tree_generators import (
     generate_problem_specific_l3_leaves,
     generate_entire_tree_l2_branches_batch,
     generate_entire_tree_l3_leaves_batch,
+    generate_entire_tree_l2_branches_batch_with_validation,
+    generate_l1_category_batch_with_validation,
 )
 
 
@@ -64,24 +66,52 @@ def generate_hypothesis_tree(
     # Generate L1, L2, L3 structure
     l1_categories = template.get("L1_categories", {})
 
-    # OPTIMIZATION: Use batched L2 and L3 generation (2 LLM calls total instead of 12)
-    # This provides context-aware labels while maintaining performance
+    # Track validation results
+    validation_results = {
+        "l2_validation": {},
+        "l3_validation": {},
+        "all_passed": False
+    }
+
+    # OPTIMIZATION: Use batched L2 and L3 generation with incremental validation
+    # This provides context-aware labels while maintaining performance and quality
     if use_llm_generation and (market_research or competitor_research):
-        # Generate ALL L2 branches in a single batched LLM call
-        batched_l2_branches = generate_entire_tree_l2_branches_batch(
+        # Generate ALL L2 branches with validation (validates each L1 separately)
+        batched_l2_branches, l2_validation = generate_entire_tree_l2_branches_batch_with_validation(
             framework_structure=l1_categories,
             problem_statement=problem,
             market_research=market_research,
             competitor_research=competitor_research,
         )
+        validation_results["l2_validation"] = l2_validation
 
-        # Generate ALL L3 leaves in a single batched LLM call
-        batched_l3_leaves = generate_entire_tree_l3_leaves_batch(
-            framework_structure=l1_categories,
-            problem_statement=problem,
-            market_research=market_research,
-            competitor_research=competitor_research,
-            num_leaves_per_branch=3,
+        # Generate L3 leaves per L1 category with validation (validates each L2 separately)
+        batched_l3_leaves = {}
+        for l1_key, l1_data in l1_categories.items():
+            # Update L1 data with generated L2 branches
+            l1_data_with_l2 = l1_data.copy()
+            l1_data_with_l2["L2_branches"] = {}
+
+            if l1_key in batched_l2_branches:
+                for l2_key, l2_data in batched_l2_branches[l1_key].items():
+                    l1_data_with_l2["L2_branches"][l2_key] = l2_data
+
+            # Generate and validate L3 for this L1
+            l3_leaves, l3_validation = generate_l1_category_batch_with_validation(
+                l1_key=l1_key,
+                l1_data=l1_data_with_l2,
+                problem_statement=problem,
+                market_research=market_research,
+                competitor_research=competitor_research,
+                num_leaves_per_branch=3,
+            )
+            batched_l3_leaves[l1_key] = l3_leaves
+            validation_results["l3_validation"][l1_key] = l3_validation
+
+        # Check if all validations passed
+        validation_results["all_passed"] = (
+            l2_validation.get("all_passed", False) and
+            all(v.get("all_passed", False) for v in validation_results["l3_validation"].values())
         )
     else:
         batched_l2_branches = None
@@ -148,6 +178,10 @@ def generate_hypothesis_tree(
                 ]
 
             tree["tree"][l1_key]["L2_branches"][l2_key]["L3_leaves"].extend(l3_leaves)
+
+    # Update metadata with validation results
+    tree["metadata"]["mece_validated"] = validation_results.get("all_passed", False)
+    tree["metadata"]["validation_results"] = validation_results
 
     return tree
 
