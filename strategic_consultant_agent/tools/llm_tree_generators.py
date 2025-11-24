@@ -1095,7 +1095,6 @@ def generate_single_l1_l2_branches(
     Returns:
         dict: {L2_key: {"label": ..., "question": ...}}
     """
-    import google.generativeai as genai
     import json
     import os
 
@@ -1347,7 +1346,6 @@ def generate_single_l2_l3_leaves(
     Returns:
         list: [L3_leaves] - List of leaf dictionaries
     """
-    import google.generativeai as genai
     import json
     import os
 

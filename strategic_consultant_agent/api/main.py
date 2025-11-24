@@ -17,6 +17,7 @@ import uuid
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.framework_loader import FrameworkLoader
 from strategic_consultant_agent.tools.persistence import save_analysis, load_analysis, _sanitize_filename
+from strategic_consultant_agent.tools.matrix_2x2 import generate_2x2_matrix
 import re
 
 # Import for Google Search research
@@ -317,21 +318,60 @@ async def generate_tree_stream(problem: str, framework: str):
                     90
                 )
 
-            yield send_progress("generate_tree", "✓ Tree generation complete", 95)
+            yield send_progress("generate_tree", "✓ Tree generation complete", 85)
             await asyncio.sleep(0.1)
 
+            # Stage 5: Generate 2x2 prioritization matrix
+            yield send_progress("prioritization", "Generating 2x2 prioritization matrix...", 88)
+            await asyncio.sleep(0.1)
+
+            # Extract all L3 leaves as items to prioritize
+            items = []
+            for l1_key, l1_data in tree.get("tree", {}).items():
+                for l2_key, l2_data in l1_data.get("L2_branches", {}).items():
+                    for l3_leaf in l2_data.get("L3_leaves", []):
+                        items.append(l3_leaf.get("label", ""))
+
+            # Generate priority matrix
+            try:
+                matrix_executor = asyncio.get_event_loop()
+                priority_matrix = await matrix_executor.run_in_executor(
+                    None,
+                    generate_2x2_matrix,
+                    items,
+                    "Effort",  # x_axis
+                    "Impact",  # y_axis
+                    "prioritization"  # matrix_type
+                )
+                yield send_progress("prioritization", "✓ Priority matrix generated", 92)
+            except Exception as matrix_error:
+                yield send_progress("prioritization", f"⚠ Matrix generation failed: {matrix_error}", 92)
+                priority_matrix = None
+
             # Auto-save the tree before sending completion (eliminates race condition)
-            yield send_progress("save", "Saving project to storage...", 98)
+            yield send_progress("save", "Saving project to storage...", 95)
             try:
                 save_result = save_analysis(
                     project_name=project_id,
                     analysis_type="hypothesis_tree",
                     content=tree
                 )
-                yield send_progress("save", f"✓ Saved as v{save_result['version']}", 100)
+                yield send_progress("save", f"✓ Tree saved as v{save_result['version']}", 97)
             except Exception as save_error:
-                yield send_progress("save", f"⚠ Auto-save failed: {save_error}", 100)
+                yield send_progress("save", f"⚠ Tree auto-save failed: {save_error}", 97)
                 # Continue anyway - frontend can retry save
+
+            # Save priority matrix if generated
+            if priority_matrix:
+                try:
+                    matrix_save_result = save_analysis(
+                        project_name=project_id,
+                        analysis_type="matrix",
+                        content=priority_matrix
+                    )
+                    yield send_progress("save", f"✓ Matrix saved as v{matrix_save_result['version']}", 100)
+                except Exception as matrix_save_error:
+                    yield send_progress("save", f"⚠ Matrix save failed: {matrix_save_error}", 100)
 
             # Final result
             result = {
@@ -687,6 +727,36 @@ async def list_projects():
                         })
 
         return {"projects": projects, "status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/matrix/{project_id}")
+async def get_priority_matrix(project_id: str, version: Optional[int] = None):
+    """
+    Get priority matrix for a project.
+
+    Args:
+        project_id: Project UUID
+        version: Optional version number (defaults to latest)
+
+    Returns:
+        dict: Priority matrix data
+    """
+    try:
+        result = load_analysis(
+            project_name=project_id,
+            analysis_type="matrix",
+            version=version
+        )
+
+        return {
+            "success": True,
+            "data": result,
+            "status": "success"
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

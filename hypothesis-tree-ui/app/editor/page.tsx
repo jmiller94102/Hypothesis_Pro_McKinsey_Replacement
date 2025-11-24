@@ -6,8 +6,9 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { MainTreeView } from '@/components/layout/MainTreeView';
 import { DebugPanel } from '@/components/layout/DebugPanel';
 import { TreeControls } from '@/components/layout/TreeControls';
+import { Matrix2x2 } from '@/components/prioritization/Matrix2x2';
 import { api } from '@/lib/api-client';
-import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, NodeLevel } from '@/lib/types';
+import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, NodeLevel, PriorityMatrix } from '@/lib/types';
 
 function EditorContent() {
   const router = useRouter();
@@ -15,6 +16,8 @@ function EditorContent() {
   const projectId = searchParams.get('id') || '';  // Use 'id' param for project UUID
 
   const [tree, setTree] = useState<HypothesisTree | null>(null);
+  const [priorityMatrix, setPriorityMatrix] = useState<PriorityMatrix | null>(null);
+  const [activeTab, setActiveTab] = useState<'tree' | 'matrix'>('tree');
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
   const [isDebugOpen, setIsDebugOpen] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -27,6 +30,7 @@ function EditorContent() {
   useEffect(() => {
     if (projectId) {
       loadProject();
+      loadPriorityMatrix();
     } else {
       setLoading(false);
       addDebugLog('No project specified', 'error');
@@ -86,6 +90,22 @@ function EditorContent() {
       console.error('Failed to load project:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadPriorityMatrix() {
+    try {
+      const result = await api.loadPriorityMatrix(projectId);
+      setPriorityMatrix(result.data.content);
+      addDebugLog('Priority matrix loaded', 'success');
+    } catch (error: any) {
+      // Matrix might not exist for this project yet - that's okay
+      if (error.status === 404) {
+        addDebugLog('No priority matrix found for this project', 'warning');
+      } else {
+        addDebugLog(`Failed to load priority matrix: ${error}`, 'error');
+        console.error('Failed to load priority matrix:', error);
+      }
     }
   }
 
@@ -331,26 +351,69 @@ function EditorContent() {
 
       {/* Right Side - Controls + Main + Debug */}
       <div className="flex-1 flex flex-col">
-        {/* Tree Controls - Collapse/Expand and Zoom */}
-        <TreeControls
-          onCollapseAll={handleCollapseAll}
-          onExpandAll={handleExpandAll}
-          zoom={zoom}
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onZoomReset={handleZoomReset}
-        />
+        {/* Tab Switcher */}
+        <div className="flex border-b border-gray-800 bg-gray-900">
+          <button
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'tree'
+                ? 'border-b-2 border-blue-500 text-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+            onClick={() => setActiveTab('tree')}
+          >
+            Hypothesis Tree
+          </button>
+          <button
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === 'matrix'
+                ? 'border-b-2 border-blue-500 text-blue-400'
+                : 'text-gray-400 hover:text-gray-300'
+            }`}
+            onClick={() => setActiveTab('matrix')}
+          >
+            Priority Matrix
+          </button>
+        </div>
 
-        {/* Main Tree View - Scrollable X/Y with Zoom */}
-        <MainTreeView
-          tree={tree}
-          onUpdateNode={handleUpdateNode}
-          onDeleteNode={handleDeleteNode}
-          onAddNode={handleAddNode}
-          zoom={zoom}
-          onZoomChange={setZoom}
-          expandedNodes={expandedNodes}
-        />
+        {activeTab === 'tree' && (
+          <>
+            {/* Tree Controls - Collapse/Expand and Zoom */}
+            <TreeControls
+              onCollapseAll={handleCollapseAll}
+              onExpandAll={handleExpandAll}
+              zoom={zoom}
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onZoomReset={handleZoomReset}
+            />
+
+            {/* Main Tree View - Scrollable X/Y with Zoom */}
+            <MainTreeView
+              tree={tree}
+              onUpdateNode={handleUpdateNode}
+              onDeleteNode={handleDeleteNode}
+              onAddNode={handleAddNode}
+              zoom={zoom}
+              onZoomChange={setZoom}
+              expandedNodes={expandedNodes}
+            />
+          </>
+        )}
+
+        {activeTab === 'matrix' && (
+          <div className="flex-1 overflow-auto p-6">
+            {priorityMatrix ? (
+              <Matrix2x2 matrixData={priorityMatrix} />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center text-gray-500">
+                  <p className="text-lg mb-2">No Priority Matrix Available</p>
+                  <p className="text-sm">Generate a new project to see the priority matrix</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Debug Panel - Collapsible bottom */}
         <DebugPanel

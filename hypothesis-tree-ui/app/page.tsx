@@ -127,7 +127,7 @@ export default function HomePage() {
   }
 
   function loadProject(projectName: string) {
-    router.push(`/editor?project=${projectName}`);
+    router.push(`/editor?id=${projectName}`);
   }
 
   if (loading) {
