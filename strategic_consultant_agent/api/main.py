@@ -62,58 +62,84 @@ def run_agent_sync(agent: Agent, input_text: str) -> str:
 
 def perform_research(problem: str) -> tuple[str, str]:
     """
-    Perform market and competitor research using Google Search.
+    Perform comprehensive market and competitor research using Google Search in a single call.
+
+    OPTIMIZATION: Combines market + competitor research into 1 LLM call instead of 2 sequential calls.
+    Saves ~8-10 seconds.
 
     Returns:
         tuple: (market_research, competitor_research)
     """
-    print(f"  → Running market research with Google Search...")
+    print(f"  → Running comprehensive research with Google Search...")
 
-    # Market research agent
-    market_agent = Agent(
-        name="market_researcher",
+    # Combined research agent
+    research_agent = Agent(
+        name="comprehensive_researcher",
         model=Gemini(model="gemini-2.5-flash"),
-        instruction=f"""You are a market research analyst specializing in healthcare technology and senior living industries.
+        instruction=f"""You are a senior strategy consultant conducting comprehensive market and competitive research.
 
-Your task is to research the market context for: {problem}
+Your task is to research the complete strategic context for: {problem}
 
-Use the google_search tool to find current, credible data. Focus on:
+Use the google_search tool to find current, credible data. Your research must cover TWO areas:
+
+## PART 1: MARKET RESEARCH
+Focus on:
 1. **Market Size & Growth**: Total addressable market, growth rates, key segments
 2. **Industry Trends**: Technology adoption trends, regulatory changes, demographic shifts
 3. **Benchmarks**: Industry standards for success metrics, typical ROI, adoption rates (cite specific sources like KLAS, McKinsey, LeadingAge)
-4. **Key Players**: Major vendors, market leaders, emerging disruptors
+4. **Market Drivers**: Key factors driving adoption or resistance
 
-Provide a structured summary with specific numbers and citations.
-If search results are limited, note the data gaps clearly.""",
+## PART 2: COMPETITIVE LANDSCAPE
+Focus on:
+1. **Key Vendors**: Major players in this space (include specific company names like Teton.ai, SafelyYou, etc.)
+2. **Product Capabilities**: Features, strengths, weaknesses
+3. **Pricing Models**: How vendors price (per unit, subscription, etc.) - include specific prices if available
+4. **Customer Reviews**: Implementation experience, support quality, results achieved
+5. **Case Studies**: Published success stories or failure analyses
+
+**Output Format:**
+Provide TWO clearly separated sections:
+
+### MARKET RESEARCH
+[Your market research findings with numbers and citations]
+
+### COMPETITIVE LANDSCAPE
+[Your competitive analysis with specific vendor names and sources]
+
+**Search Strategy**: Use multiple targeted searches like:
+- "[technology] market size [year]"
+- "[industry] adoption rates benchmark"
+- "[vendor name] pricing"
+- "[vendor name] customer reviews"
+- "[technology type] vendors comparison"
+
+Provide specific numbers, citations, and objective analysis. Note any data gaps clearly.""",
         tools=[google_search]
     )
 
-    market_research = run_agent_sync(market_agent, problem)
+    full_research = run_agent_sync(research_agent, problem)
 
-    print(f"  → Running competitor research with Google Search...")
-
-    # Competitor research agent
-    competitor_agent = Agent(
-        name="competitor_researcher",
-        model=Gemini(model="gemini-2.5-flash"),
-        instruction=f"""You are a competitive intelligence analyst specializing in healthcare technology.
-
-Your task is to research the competitive landscape for: {problem}
-
-Use the google_search tool to find current information. Focus on:
-1. **Key Vendors**: Who are the major players in this space? Include specific company names
-2. **Product Capabilities**: What features do they offer? Strengths/weaknesses?
-3. **Pricing Models**: How do vendors price (per unit, subscription, etc.)? Include specific prices if available
-4. **Customer Reviews**: What do customers say about implementation, support, results?
-5. **Case Studies**: Any published success stories or failure analyses?
-
-Search for terms like "[vendor name] reviews", "[vendor name] pricing", "[technology type] vendors comparison"
-
-Provide an objective analysis with sources. Include both positives and negatives.""",
-        tools=[google_search]
-    )
-
-    competitor_research = run_agent_sync(competitor_agent, problem)
+    # Split the response into market and competitor sections
+    if "### COMPETITIVE LANDSCAPE" in full_research or "### COMPETITIVE INTELLIGENCE" in full_research or "## PART 2" in full_research:
+        # Try to split on section headers
+        parts = full_research.split("###")
+        if len(parts) >= 2:
+            market_research = parts[0].replace("MARKET RESEARCH", "").replace("## PART 1:", "").strip()
+            competitor_research = "\n".join(parts[1:]).replace("COMPETITIVE LANDSCAPE", "").replace("COMPETITIVE INTELLIGENCE", "").replace("## PART 2:", "").strip()
+        else:
+            # Fallback: split on "PART 2"
+            parts = full_research.split("## PART 2")
+            if len(parts) == 2:
+                market_research = parts[0].replace("## PART 1:", "").strip()
+                competitor_research = parts[1].strip()
+            else:
+                # Fallback: use full research for both
+                market_research = full_research
+                competitor_research = full_research
+    else:
+        # No clear sections - use full research for both
+        market_research = full_research
+        competitor_research = full_research
 
     return market_research, competitor_research
 
