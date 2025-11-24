@@ -136,32 +136,33 @@ def generate_l1_category_batch(
 {l2_structure_text}
 {context_section}
 
-**Task:** Generate {num_leaves_per_branch} problem-specific L3 leaves (testable hypotheses) for EACH of the L2 branches above.
+**Task:** For EACH L2 branch, determine how many L3 leaves (3-7) are needed for MECE completeness, then generate them.
 
-**CRITICAL Label/Question Rules:**
+**CRITICAL Requirements:**
 
-1. **Labels**: Concise key phrases (3-6 words), NO vendor names, NO specific numbers
+1. **Adaptive Leaf Count**: Generate 3-7 L3 leaves per L2 branch based on problem complexity
+   - Simple aspects: 3-4 leaves may suffice
+   - Complex aspects: 5-7 leaves may be needed for completeness
+   - **MECE**: Leaves must be Mutually Exclusive and Collectively Exhaustive
+
+2. **Label Rules**: Concise key phrases (3-6 words), NO vendor names, NO specific numbers
    - ✓ Good: "Fall Incident Reduction", "Response Time Improvement", "Care Workflow Efficiency"
    - ✗ Bad: "Resident-Reported Fear via Teton.ai", "30% Fall Reduction"
 
-2. **Questions**: Clean, simple questions (1 sentence max), NO vendor names
+3. **Question Rules**: Clean, simple questions (1 sentence max), NO vendor names
    - ✓ Good: "What is the measured reduction in fall incidents?"
    - ✗ Bad: Long paragraphs with vendor references
 
-3. **Targets**: Include benchmarks and citations HERE (not in labels)
+4. **Targets**: Include benchmarks and citations HERE (not in labels)
    - ✓ Good: ">25% reduction vs baseline (KLAS 2024 benchmark)"
 
-4. **Data Sources**: Put vendor names HERE (not in labels/questions)
+5. **Data Sources**: Put vendor names HERE (not in labels/questions)
    - ✓ Good: "Pilot logs, Teton.ai case study, KLAS 2024 report"
-
-**MECE Requirements:**
-- Within each L2 branch, the {num_leaves_per_branch} L3 leaves must be Mutually Exclusive (no overlap) and Collectively Exhaustive (cover all key aspects)
-- Ensure leaves are specific to the problem and informed by research context
 
 **Output Format (JSON):**
 Return a JSON object where:
 - Keys are L2_branch identifiers (from the list above)
-- Values are arrays of {num_leaves_per_branch} L3 leaf objects
+- Values are arrays of 3-7 L3 leaf objects (you decide the count for MECE completeness)
 
 Each L3 leaf must contain:
 - "label": Concise key phrase (3-6 words, NO vendors)
@@ -183,18 +184,18 @@ Each L3 leaf must contain:
       "data_source": "Pilot logs, ER visit logs, vendor case studies",
       "assessment_criteria": "Compare pre/post incident rates"
     }},
-    ... {num_leaves_per_branch - 1} more leaves
+    ... (2-6 more leaves based on completeness needs)
   ],
-  "L2_BRANCH_2": [ ... {num_leaves_per_branch} leaves ... ],
+  "L2_BRANCH_2": [ ... (3-7 leaves based on complexity) ... ],
   ...
 }}
 ```
 
 **CRITICAL - Remember:**
+- Decide leaf count (3-7) based on MECE completeness
 - Labels: 3-6 words, NO vendors, NO numbers
 - Questions: Simple, 1 sentence, NO vendors
-- Generate {num_leaves_per_branch} leaves for EVERY L2 branch
-- Ensure MECE compliance within each L2
+- Ensure MECE compliance within each L2 branch
 
 Return ONLY the JSON object, no other text."""
 
@@ -763,3 +764,187 @@ def _generate_fallback_l2_branches(l1_category: str, num_branches: int) -> Dict[
             "question": f"What are the key {l1_category.lower()} considerations for aspect {i+1}?",
         }
     return branches
+
+
+def generate_entire_tree_l2_branches_batch(
+    framework_structure: Dict[str, Any],
+    problem_statement: str,
+    market_research: Optional[str] = None,
+    competitor_research: Optional[str] = None,
+    model_name: str = "gemini-2.5-flash",
+) -> Dict[str, Dict[str, Dict]]:
+    """
+    Generate ALL L2 branches for the entire tree in a single batched LLM call.
+
+    This generates context-aware L2 branch labels and questions that match
+    the problem domain, ensuring consistency with L3 leaves.
+
+    Args:
+        framework_structure: The framework template with L1 categories
+        problem_statement: The strategic question being analyzed
+        market_research: Market research context (optional)
+        competitor_research: Competitive analysis context (optional)
+        model_name: Gemini model to use
+
+    Returns:
+        dict: Nested dict structure {L1_key: {L2_key: {"label": ..., "question": ...}}}
+    """
+    # Build context section
+    context_section = ""
+    if market_research:
+        context_section += f"\n**Market Research Context:**\n{market_research}\n"
+    if competitor_research:
+        context_section += f"\n**Competitor Research Context:**\n{competitor_research}\n"
+
+    # Build framework structure description
+    framework_desc = []
+    for l1_key, l1_data in framework_structure.items():
+        l1_label = l1_data.get("label", l1_key)
+        l1_question = l1_data.get("question", "")
+        l1_description = l1_data.get("description", "")
+
+        framework_desc.append(f"\n### {l1_key}: {l1_label}")
+        framework_desc.append(f"Question: {l1_question}")
+        framework_desc.append(f"Description: {l1_description}")
+
+    framework_desc_text = "\n".join(framework_desc)
+
+    prompt = f"""You are a senior strategy consultant generating problem-specific L2 branches for a strategic decision tree.
+
+**Strategic Question:** {problem_statement}
+
+**Framework Structure:**{framework_desc_text}
+{context_section}
+
+**Task:** For EACH L1 category, determine how many L2 branches (3-7) are needed for MECE completeness, then generate them.
+
+**CRITICAL Requirements:**
+
+1. **Adaptive Branch Count**: Generate 3-7 L2 branches per L1 based on problem complexity
+   - Simple problems: 3-4 branches may suffice
+   - Complex problems: 5-7 branches may be needed for completeness
+   - **MECE**: Branches must be Mutually Exclusive and Collectively Exhaustive
+
+2. **Context-Aware Labels**: Customize labels to match the problem domain
+   - For sales tools: "Sales Impact", "Revenue Generation", "Team Adoption"
+   - For healthcare: "Patient Safety", "Clinical Outcomes", "Care Quality"
+   - For tech products: "User Engagement", "Technical Performance", "Market Fit"
+   - ✗ Bad: Generic labels like "Clinical/Safety Impact" for non-clinical problems
+
+3. **Clear Questions**: One focused question per L2 branch (1 sentence, NO vendor names)
+   - ✓ Good: "Does it meaningfully improve team productivity?"
+   - ✗ Bad: Long paragraphs or vendor-specific questions
+
+4. **MECE Compliance**: Ensure branches are Mutually Exclusive and Collectively Exhaustive within each L1
+
+**Output Format (JSON):**
+Return a JSON object where:
+- Keys are L1 category identifiers (e.g., "DESIRABILITY", "FEASIBILITY", "VIABILITY")
+- Values are objects with L2 branch keys mapping to:
+  - "label": Context-specific label (2-5 words, NO vendors)
+  - "question": Focused question (1 sentence, NO vendors)
+
+**Example for "Should we scale AI meeting notetaker to sales team" (SALES context):**
+```json
+{{
+  "DESIRABILITY": {{
+    "CLINICAL_SAFETY": {{
+      "label": "Sales Team Productivity",
+      "question": "Does it measurably improve sales team efficiency and outcomes?"
+    }},
+    "FINANCIAL_ROI": {{
+      "label": "Revenue Impact",
+      "question": "Does it drive measurable revenue growth or cost savings?"
+    }},
+    "STAKEHOLDER_VALUE": {{
+      "label": "Team Adoption",
+      "question": "Will the sales team actively use and value this tool?"
+    }}
+  }},
+  "FEASIBILITY": {{
+    "TECHNICAL_SCALABILITY": {{
+      "label": "Integration Complexity",
+      "question": "Can it integrate smoothly with existing sales tools and workflows?"
+    }},
+    "OPERATIONAL_CAPACITY": {{
+      "label": "Deployment Effort",
+      "question": "Do we have the resources to roll this out to all sales teams?"
+    }},
+    "REGULATORY_COMPLIANCE": {{
+      "label": "Security & Compliance",
+      "question": "Does it meet data security and compliance requirements?"
+    }}
+  }},
+  "VIABILITY": {{
+    "FINANCIAL_SUSTAINABILITY": {{
+      "label": "Cost Structure",
+      "question": "Is the ongoing cost sustainable for our budget?"
+    }},
+    "STRATEGIC_FIT": {{
+      "label": "Strategic Alignment",
+      "question": "Does it align with our go-to-market strategy?"
+    }},
+    "COMPETITIVE_POSITIONING": {{
+      "label": "Competitive Advantage",
+      "question": "Does it provide meaningful competitive differentiation?"
+    }}
+  }}
+}}
+```
+
+**CRITICAL - Remember:**
+- Keep original L2 keys from template (e.g., "CLINICAL_SAFETY", "FINANCIAL_ROI")
+- Customize labels to match problem domain (NOT generic)
+- Labels: 2-5 words, NO vendors
+- Questions: 1 sentence, focused, NO vendors
+
+Return ONLY the JSON object, no other text."""
+
+    # Initialize client
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    # Generate content
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt,
+    )
+
+    # Parse JSON response
+    try:
+        # Extract response text
+        response_text = response.text.strip()
+
+        # Extract JSON from response (handle markdown code blocks)
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        all_l2_branches = json.loads(response_text)
+
+        # Clean up labels (max 6 words)
+        for l1_key, l2_branches in all_l2_branches.items():
+            for l2_key, l2_data in l2_branches.items():
+                if "label" in l2_data:
+                    l2_data["label"] = _cleanup_label(l2_data["label"], max_words=6)
+
+        return all_l2_branches
+
+    except (json.JSONDecodeError, AttributeError, KeyError) as e:
+        # Fallback: return template structure if LLM fails
+        print(f"Warning: Failed to parse L2 batch LLM response: {e}")
+        print(f"Response was: {response}")
+
+        # Return template L2 structure as fallback
+        fallback = {}
+        for l1_key, l1_data in framework_structure.items():
+            fallback[l1_key] = {}
+            for l2_key, l2_data in l1_data.get("L2_branches", {}).items():
+                fallback[l1_key][l2_key] = {
+                    "label": l2_data.get("label", l2_key),
+                    "question": l2_data.get("question", ""),
+                }
+        return fallback

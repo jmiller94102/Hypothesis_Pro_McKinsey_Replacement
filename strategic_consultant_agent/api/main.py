@@ -23,9 +23,7 @@ import re
 # Import for Google Search research
 import os
 import asyncio
-from google.adk.agents import Agent
-from google.adk.models.google_llm import Gemini
-from google.adk.tools import google_search
+import google.genai as genai
 
 app = FastAPI(title="HypothesisTree Pro API", version="1.0.0")
 
@@ -57,46 +55,24 @@ app.add_middleware(
 
 
 # Helper functions for Google Search research
-def run_agent_sync(agent: Agent, input_text: str) -> str:
-    """
-    Run ADK agent synchronously and extract final output.
-
-    Consumes the async generator from run_live() and returns the final text output.
-    """
-    async def run():
-        # Pass string directly - ADK accepts both string and SessionInput
-        events = agent.run_live(input_text)
-        final_output = ""
-
-        async for event in events:
-            # Extract text output from events
-            if hasattr(event, 'output') and event.output:
-                final_output = str(event.output)
-            elif hasattr(event, 'text') and event.text:
-                final_output = str(event.text)
-
-        return final_output if final_output else "No research results available"
-
-    return asyncio.run(run())
-
-
 def perform_research(problem: str) -> tuple[str, str]:
     """
-    Perform comprehensive market and competitor research using Google Search in a single call.
+    Perform comprehensive market and competitor research using Google GenAI with Google Search.
 
     OPTIMIZATION: Combines market + competitor research into 1 LLM call instead of 2 sequential calls.
-    Saves ~8-10 seconds.
+    Uses google.genai directly to avoid ADK API compatibility issues.
 
     Returns:
         tuple: (market_research, competitor_research)
     """
     print(f"  → Running comprehensive research with Google Search...")
 
-    # Combined research agent
-    research_agent = Agent(
-        name="comprehensive_researcher",
-        model=Gemini(model="gemini-2.5-flash"),
-        instruction=f"""You are a senior strategy consultant conducting comprehensive market and competitive research.
+    try:
+        # Initialize genai client
+        client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+        # Combined research prompt
+        research_prompt = f"""You are a senior strategy consultant conducting comprehensive market and competitive research.
 
 Your task is to research the complete strategic context for: {problem}
 
@@ -133,11 +109,29 @@ Provide TWO clearly separated sections:
 - "[vendor name] customer reviews"
 - "[technology type] vendors comparison"
 
-Provide specific numbers, citations, and objective analysis. Note any data gaps clearly.""",
-        tools=[google_search]
-    )
+Provide specific numbers, citations, and objective analysis. Note any data gaps clearly."""
 
-    full_research = run_agent_sync(research_agent, problem)
+        # Generate with Google Search tool
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=research_prompt,
+            config={
+                "tools": [{"google_search": {}}],
+                "temperature": 0.7,
+            }
+        )
+
+        # Extract text from response
+        full_research = response.text if hasattr(response, 'text') else str(response)
+
+    except Exception as e:
+        print(f"  ✗ Research failed: {e}")
+        # Return fallback research
+        full_research = f"""### MARKET RESEARCH
+No market research available due to API error: {str(e)}
+
+### COMPETITIVE LANDSCAPE
+No competitive research available due to API error: {str(e)}"""
 
     # Split the response into market and competitor sections
     if "### COMPETITIVE LANDSCAPE" in full_research or "### COMPETITIVE INTELLIGENCE" in full_research or "## PART 2" in full_research:
@@ -283,22 +277,102 @@ async def generate_tree_stream(problem: str, framework: str):
                 )
                 yield send_progress("save_cache", "✓ Research cached", 65)
 
-            # Stage 4: Generate tree
+            # Stage 4: Generate tree with MECE validation loop
             yield send_progress("generate_tree", "Generating hypothesis tree with LLM...", 70)
             await asyncio.sleep(0.1)
 
-            loop = asyncio.get_event_loop()
-            tree = await loop.run_in_executor(
-                None,
-                generate_hypothesis_tree,
-                problem,
-                framework,
-                market_research,
-                competitor_research,
-                True  # use_llm_generation
-            )
+            # Import MECE validator for loop
+            from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
 
-            yield send_progress("generate_tree", "✓ Tree generation complete", 100)
+            max_iterations = 3
+            tree = None
+            validation_result = None
+
+            for iteration in range(1, max_iterations + 1):
+                yield send_progress(
+                    "mece_loop",
+                    f"Iteration {iteration}/{max_iterations}: Generating tree...",
+                    70 + (iteration - 1) * 10
+                )
+
+                # Generate tree
+                loop_executor = asyncio.get_event_loop()
+                tree = await loop_executor.run_in_executor(
+                    None,
+                    generate_hypothesis_tree,
+                    problem,
+                    framework,
+                    market_research,
+                    competitor_research,
+                    True  # use_llm_generation
+                )
+
+                yield send_progress(
+                    "mece_loop",
+                    f"Iteration {iteration}/{max_iterations}: Validating MECE compliance...",
+                    75 + (iteration - 1) * 10
+                )
+                await asyncio.sleep(0.1)
+
+                # Validate MECE
+                validation_result = await loop_executor.run_in_executor(
+                    None,
+                    validate_mece_structure,
+                    tree
+                )
+
+                if validation_result["is_mece"]:
+                    # Check if there are warnings (gaps are now soft warnings)
+                    num_warnings = len(validation_result.get("warnings", []))
+                    if num_warnings > 0:
+                        yield send_progress(
+                            "mece_loop",
+                            f"✓ MECE validation passed on iteration {iteration} ({num_warnings} optional suggestions available)",
+                            80 + (iteration - 1) * 10
+                        )
+                    else:
+                        yield send_progress(
+                            "mece_loop",
+                            f"✓ MECE validation passed on iteration {iteration}",
+                            80 + (iteration - 1) * 10
+                        )
+                    break
+                else:
+                    # Report hard failures only (overlaps and level_inconsistencies)
+                    num_overlaps = len(validation_result["issues"]["overlaps"])
+                    num_inconsistencies = len(validation_result["issues"]["level_inconsistencies"])
+                    yield send_progress(
+                        "mece_loop",
+                        f"⚠ Iteration {iteration}: Found {num_overlaps} overlaps, {num_inconsistencies} inconsistencies. Regenerating...",
+                        75 + (iteration - 1) * 10
+                    )
+                    await asyncio.sleep(0.1)
+
+            # Final validation status
+            if validation_result and validation_result["is_mece"]:
+                yield send_progress("mece_loop", "✓ Final tree passes MECE validation", 95)
+            else:
+                yield send_progress(
+                    "mece_loop",
+                    f"⚠ Max iterations reached. Tree has validation issues (see MECE button for details)",
+                    95
+                )
+
+            yield send_progress("generate_tree", "✓ Tree generation complete", 95)
+            await asyncio.sleep(0.1)
+
+            # Auto-save the tree before sending completion (eliminates race condition)
+            yield send_progress("save", "Saving project to storage...", 98)
+            try:
+                save_result = save_analysis(
+                    project_name=project_id,
+                    analysis_type="hypothesis_tree",
+                    content=tree
+                )
+                yield send_progress("save", f"✓ Saved as v{save_result['version']}", 100)
+            except Exception as save_error:
+                yield send_progress("save", f"⚠ Auto-save failed: {save_error}", 100)
+                # Continue anyway - frontend can retry save
 
             # Final result
             result = {

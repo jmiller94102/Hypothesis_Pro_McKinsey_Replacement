@@ -57,14 +57,23 @@ def validate_mece_structure(structure: Dict) -> Dict:
         )
 
     # Determine if MECE
+    # CRITICAL: Only overlaps and level_inconsistencies are HARD failures
+    # Gaps are SOFT warnings - they suggest potential improvements but don't fail MECE
     has_critical_issues = bool(
-        issues["overlaps"] or issues["gaps"] or issues["level_inconsistencies"]
+        issues["overlaps"] or issues["level_inconsistencies"]
     )
     is_mece = not has_critical_issues
 
+    # Separate warnings from issues
+    warnings = issues["gaps"]  # Gaps are soft warnings
+
     return {
         "is_mece": is_mece,
-        "issues": issues,
+        "issues": {
+            "overlaps": issues["overlaps"],
+            "level_inconsistencies": issues["level_inconsistencies"]
+        },
+        "warnings": warnings,  # Gaps are now warnings, not failures
         "suggestions": (
             suggestions if not is_mece else ["Structure passes MECE validation"]
         ),

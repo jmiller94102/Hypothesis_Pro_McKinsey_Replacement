@@ -79,17 +79,9 @@ export default function HomePage() {
             finalResult = data.result;
             eventSource.close();
 
-            // Use project_id from backend response
+            // Backend auto-saves during generation, so we can navigate directly
             const projectId = finalResult.project_id;
-            api.saveTree(projectId, finalResult.tree, 'Initial version')
-              .then(() => {
-                router.push(`/editor?id=${projectId}`);
-              })
-              .catch((err) => {
-                console.error('Failed to save:', err);
-                alert('Tree generated but failed to save. Please try again.');
-                setIsGenerating(false);
-              });
+            router.push(`/editor?id=${projectId}`);
           } else if (data.stage === 'error') {
             // Error occurred
             console.error('Generation error:', data.message);

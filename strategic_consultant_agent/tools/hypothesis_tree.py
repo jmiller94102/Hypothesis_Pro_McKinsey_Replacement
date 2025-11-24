@@ -6,6 +6,7 @@ from strategic_consultant_agent.tools.framework_loader import load_framework
 from strategic_consultant_agent.tools.llm_tree_generators import (
     generate_problem_specific_l2_branches,
     generate_problem_specific_l3_leaves,
+    generate_entire_tree_l2_branches_batch,
     generate_entire_tree_l3_leaves_batch,
 )
 
@@ -63,9 +64,17 @@ def generate_hypothesis_tree(
     # Generate L1, L2, L3 structure
     l1_categories = template.get("L1_categories", {})
 
-    # OPTIMIZATION: Use batched L3 generation (1 LLM call instead of 9 for scale_decision)
-    # This reduces generation time from ~126s to ~35-40s (70% faster)
+    # OPTIMIZATION: Use batched L2 and L3 generation (2 LLM calls total instead of 12)
+    # This provides context-aware labels while maintaining performance
     if use_llm_generation and (market_research or competitor_research):
+        # Generate ALL L2 branches in a single batched LLM call
+        batched_l2_branches = generate_entire_tree_l2_branches_batch(
+            framework_structure=l1_categories,
+            problem_statement=problem,
+            market_research=market_research,
+            competitor_research=competitor_research,
+        )
+
         # Generate ALL L3 leaves in a single batched LLM call
         batched_l3_leaves = generate_entire_tree_l3_leaves_batch(
             framework_structure=l1_categories,
@@ -74,6 +83,9 @@ def generate_hypothesis_tree(
             competitor_research=competitor_research,
             num_leaves_per_branch=3,
         )
+    else:
+        batched_l2_branches = None
+        batched_l3_leaves = None
 
     for l1_key, l1_data in l1_categories.items():
         tree["tree"][l1_key] = {
@@ -83,14 +95,16 @@ def generate_hypothesis_tree(
             "L2_branches": {},
         }
 
-        # OPTIMIZATION: Always use template L2 branches to ensure key consistency
-        # This prevents L2 key mismatches with L3 batch generation
-        # The L3 leaves will be problem-specific and rich, which is what matters most
-        template_l2 = l1_data.get("L2_branches", {})
-        l2_branches_dict = {
-            key: {"label": data.get("label", key), "question": data.get("question", "")}
-            for key, data in template_l2.items()
-        }
+        # Use LLM-generated L2 branches if available, otherwise fall back to template
+        if batched_l2_branches and l1_key in batched_l2_branches:
+            l2_branches_dict = batched_l2_branches[l1_key]
+        else:
+            # Fall back to template L2 branches
+            template_l2 = l1_data.get("L2_branches", {})
+            l2_branches_dict = {
+                key: {"label": data.get("label", key), "question": data.get("question", "")}
+                for key, data in template_l2.items()
+            }
 
         # Add L2 branches to tree and attach L3 leaves
         for l2_key, l2_data in l2_branches_dict.items():
@@ -101,7 +115,7 @@ def generate_hypothesis_tree(
             }
 
             # Attach L3 leaves
-            if use_llm_generation and (market_research or competitor_research):
+            if batched_l3_leaves:
                 # Get L3 leaves from batched generation
                 l3_leaves = batched_l3_leaves.get(l1_key, {}).get(l2_key, [])
 

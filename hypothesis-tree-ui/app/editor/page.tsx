@@ -47,18 +47,40 @@ function EditorContent() {
   async function loadProject() {
     try {
       addDebugLog(`Loading project: ${projectId}`, 'info');
+
+      // Load tree and versions, but handle 404 errors gracefully
       const [treeRes, versionsRes] = await Promise.all([
-        api.loadTree(projectId),
-        api.listVersions(projectId),
+        api.loadTree(projectId).catch((err) => {
+          // If tree doesn't exist yet (404), that's okay - might be brand new project
+          if (err.status === 404) {
+            addDebugLog('Project not saved yet - will be created on first save', 'warning');
+            return null;
+          }
+          throw err;
+        }),
+        api.listVersions(projectId).catch((err) => {
+          // If no versions yet, return empty array
+          if (err.status === 404) {
+            return { versions: [] };
+          }
+          throw err;
+        }),
       ]);
 
-      setTree(treeRes.data.content);
-      setVersions(versionsRes.versions);
-      setHasUnsavedChanges(false);
-      addDebugLog(
-        `Loaded project ${projectId} v${treeRes.data.metadata.version}`,
-        'success'
-      );
+      if (treeRes) {
+        setTree(treeRes.data.content);
+        setVersions(versionsRes.versions);
+        setHasUnsavedChanges(false);
+        addDebugLog(
+          `Loaded project ${projectId} v${treeRes.data.metadata.version}`,
+          'success'
+        );
+      } else {
+        // Project doesn't exist yet - this shouldn't happen in normal flow
+        // User might have navigated directly to /editor?id=invalid-id
+        addDebugLog('Project not found - please generate a new tree from home page', 'error');
+        setVersions([]);
+      }
     } catch (error) {
       addDebugLog(`Failed to load project: ${error}`, 'error');
       console.error('Failed to load project:', error);
