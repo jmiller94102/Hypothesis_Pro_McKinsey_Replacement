@@ -5,6 +5,13 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api-client';
 import type { Framework, Project } from '@/lib/types';
 
+interface ProgressEvent {
+  stage: string;
+  message: string;
+  progress: number;
+  timestamp: string;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [frameworks, setFrameworks] = useState<Framework[]>([]);
@@ -12,6 +19,11 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [newProjectProblem, setNewProjectProblem] = useState('');
   const [selectedFramework, setSelectedFramework] = useState('');
+
+  // Progress tracking
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progressEvents, setProgressEvents] = useState<ProgressEvent[]>([]);
+  const [currentProgress, setCurrentProgress] = useState(0);
 
   useEffect(() => {
     loadData();
@@ -41,18 +53,85 @@ export default function HomePage() {
       return;
     }
 
+    setIsGenerating(true);
+    setProgressEvents([]);
+    setCurrentProgress(0);
+
     try {
-      const { tree } = await api.generateTree(newProjectProblem, selectedFramework);
-      const projectName = newProjectProblem.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50);
+      // Use EventSource for Server-Sent Events
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+      const eventSource = new EventSource(
+        `${API_BASE}/api/tree/generate-stream?` +
+        new URLSearchParams({
+          problem: newProjectProblem,
+          framework: selectedFramework,
+        })
+      );
 
-      // Save initial version
-      await api.saveTree(projectName, tree, 'Initial version');
+      let finalResult: any = null;
 
-      // Navigate to editor
-      router.push(`/editor?project=${projectName}`);
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.stage === 'complete') {
+            // Final result received
+            finalResult = data.result;
+            eventSource.close();
+
+            // Save and navigate
+            const projectName = newProjectProblem.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50);
+            api.saveTree(projectName, finalResult.tree, 'Initial version')
+              .then(() => {
+                router.push(`/editor?project=${projectName}`);
+              })
+              .catch((err) => {
+                console.error('Failed to save:', err);
+                alert('Tree generated but failed to save. Please try again.');
+                setIsGenerating(false);
+              });
+          } else if (data.stage === 'error') {
+            // Error occurred
+            console.error('Generation error:', data.message);
+            alert(`Error: ${data.message}`);
+            eventSource.close();
+            setIsGenerating(false);
+          } else {
+            // Progress update
+            setProgressEvents((prev) => [...prev, data]);
+            setCurrentProgress(data.progress);
+          }
+        } catch (err) {
+          console.error('Failed to parse SSE data:', err);
+        }
+      };
+
+      eventSource.onerror = (error) => {
+        console.error('SSE Error:', error);
+        eventSource.close();
+
+        // Fallback to non-streaming API
+        if (!finalResult) {
+          console.log('Falling back to non-streaming API...');
+          api.generateTree(newProjectProblem, selectedFramework)
+            .then(({ tree }) => {
+              const projectName = newProjectProblem.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50);
+              return api.saveTree(projectName, tree, 'Initial version').then(() => projectName);
+            })
+            .then((projectName) => {
+              router.push(`/editor?project=${projectName}`);
+            })
+            .catch((err) => {
+              console.error('Fallback failed:', err);
+              alert('Failed to create project. Please try again.');
+              setIsGenerating(false);
+            });
+        }
+      };
     } catch (error) {
       console.error('Failed to create project:', error);
       alert('Failed to create project. Please try again.');
+      setIsGenerating(false);
     }
   }
 
@@ -114,10 +193,40 @@ export default function HomePage() {
 
               <button
                 onClick={createNewProject}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition-colors"
+                disabled={isGenerating}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-md font-medium transition-colors"
               >
-                Create Project
+                {isGenerating ? 'Generating...' : 'Create Project'}
               </button>
+
+              {/* Progress Panel */}
+              {isGenerating && (
+                <div className="mt-4 p-4 bg-gray-800 border border-gray-700 rounded-md">
+                  <div className="mb-2">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">Progress</span>
+                      <span className="text-gray-400">{currentProgress}%</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${currentProgress}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Event Log */}
+                  <div className="mt-3 max-h-32 overflow-y-auto space-y-1">
+                    {progressEvents.map((event, idx) => (
+                      <div key={idx} className="text-xs text-gray-400 font-mono">
+                        <span className="text-gray-500">{new Date(event.timestamp).toLocaleTimeString()}</span>
+                        {' '}
+                        <span className="text-gray-300">{event.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

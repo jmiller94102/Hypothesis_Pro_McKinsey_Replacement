@@ -164,9 +164,12 @@ async def root():
     }
 
 
-@app.post("/api/tree/generate-stream")
-async def generate_tree_stream(request: TreeGenerateRequest):
-    """Generate new tree with progress updates via Server-Sent Events."""
+@app.get("/api/tree/generate-stream")
+async def generate_tree_stream(problem: str, framework: str):
+    """Generate new tree with progress updates via Server-Sent Events.
+
+    Note: GET endpoint for EventSource compatibility.
+    """
 
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events for progress updates."""
@@ -191,7 +194,7 @@ async def generate_tree_stream(request: TreeGenerateRequest):
 
             try:
                 research_data = load_analysis(
-                    project_name=request.problem,
+                    project_name=problem,
                     analysis_type="research"
                 )
                 market_research = research_data["content"].get("market_research", "")
@@ -209,7 +212,7 @@ async def generate_tree_stream(request: TreeGenerateRequest):
                     # Run research in thread pool to avoid blocking
                     loop = asyncio.get_event_loop()
                     market_research, competitor_research = await loop.run_in_executor(
-                        None, perform_research, request.problem
+                        None, perform_research, problem
                     )
                     yield send_progress("market_research", "✓ Market research complete", 50)
                 except Exception as e:
@@ -220,7 +223,7 @@ async def generate_tree_stream(request: TreeGenerateRequest):
                 # Stage 3: Save research cache
                 yield send_progress("save_cache", "Saving research cache...", 60)
                 save_analysis(
-                    project_name=request.problem,
+                    project_name=problem,
                     analysis_type="research",
                     content={
                         "market_research": market_research,
@@ -237,8 +240,8 @@ async def generate_tree_stream(request: TreeGenerateRequest):
             tree = await loop.run_in_executor(
                 None,
                 generate_hypothesis_tree,
-                request.problem,
-                request.framework,
+                problem,
+                framework,
                 market_research,
                 competitor_research,
                 True  # use_llm_generation
