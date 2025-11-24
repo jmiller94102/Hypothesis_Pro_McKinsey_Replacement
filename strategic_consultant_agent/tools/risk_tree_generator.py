@@ -4,7 +4,7 @@ import json
 import os
 from typing import Dict, List, Optional
 
-import google.genai as genai
+from google import genai
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 

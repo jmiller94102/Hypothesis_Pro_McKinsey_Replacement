@@ -22,7 +22,7 @@ import re
 # Import for Google Search research
 import os
 import asyncio
-import google.genai as genai
+from google import genai
 
 app = FastAPI(title="HypothesisTree Pro API", version="1.0.0")
 

@@ -9,7 +9,7 @@ import json
 import os
 from typing import Dict, List, Optional, Any, Tuple
 
-import google.genai as genai
+from google import genai
 
 
 def _cleanup_label(label: str, max_words: int = 6) -> str:
