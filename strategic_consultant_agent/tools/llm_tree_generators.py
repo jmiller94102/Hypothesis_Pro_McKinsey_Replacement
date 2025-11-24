@@ -21,7 +21,7 @@ def generate_problem_specific_l3_leaves(
     market_research: Optional[str] = None,
     competitor_research: Optional[str] = None,
     num_leaves: int = 3,
-    model_name: str = "gemini-2.5-flash-lite",
+    model_name: str = "gemini-1.5-flash",
 ) -> List[Dict]:
     """
     Generate problem-specific L3 leaves using LLM with research context.
@@ -58,43 +58,52 @@ def generate_problem_specific_l3_leaves(
   Question: {l2_question}
 {context_section}
 
-**Task:** Generate {num_leaves} problem-specific L3 leaves (hypotheses) that:
+**Task:** Generate {num_leaves} problem-specific L3 leaves (hypotheses) that follow MECE principles.
 
-1. **Are highly specific to this problem statement** - NOT generic templates
-2. **Reference specific data from research context** when setting targets and data sources
-3. **Use industry benchmarks** from the research to set realistic targets
-4. **Mention specific vendors/competitors** when relevant (e.g., "Teton.ai integration capability")
-5. **Are measurable and testable** with clear success criteria
+**CRITICAL Label/Question Rules:**
+
+1. **Labels**: Concise key phrases (2-4 words max), NO vendor names, NO specific numbers
+   - ✓ Good: "Fall Incident Reduction", "Response Time Improvement", "Injury Severity Reduction"
+   - ✗ Bad: "Resident-Reported Fear via Teton.ai", "Fall Detection Using X Vendor", "30% Fall Reduction"
+
+2. **Questions**: Clean, simple questions about the metric (1 sentence max), NO vendor names
+   - ✓ Good: "What is the measured reduction in fall incidents?"
+   - ✗ Bad: Long paragraphs with vendor references
+
+3. **Targets**: Include benchmarks, numbers, and citations HERE (not in labels)
+   - ✓ Good: ">25% reduction vs baseline (KLAS 2024 benchmark)"
+
+4. **Data Sources**: Put vendor names and specific studies HERE (not in labels/questions)
+   - ✓ Good: "Pilot incident logs, Teton.ai case study, KLAS 2024 report"
 
 **Output Format (JSON):**
 Return a JSON array with {num_leaves} objects, each containing:
-- "label": Specific hypothesis label (e.g., "Fall-Related ER Visit Reduction")
-- "question": Specific, answerable question (e.g., "Does it reduce fall-related ER visits by >30%?")
+- "label": Concise key phrase (2-4 words, NO vendors)
+- "question": Simple question (1 sentence, NO vendors)
 - "metric_type": One of ["quantitative", "qualitative", "binary"]
-- "target": Specific target with benchmark citation if available (e.g., ">30% reduction per KLAS 2024 study")
-- "data_source": Specific data source (e.g., "ER visit logs, incident reports, Teton.ai case study")
-- "assessment_criteria": How to evaluate this hypothesis (be specific)
+- "target": Specific target with benchmark citations
+- "data_source": Specific sources including vendor case studies
+- "assessment_criteria": How to evaluate
 
 **Example for "fall detection" problem:**
 ```json
 [
   {{
-    "label": "Fall-Related Hospitalization Reduction",
-    "question": "Does fall detection reduce hospitalization rates from fall-related injuries?",
+    "label": "Fall Incident Reduction",
+    "question": "What is the measured reduction in fall incidents?",
     "metric_type": "quantitative",
-    "target": "30-40% reduction in fall-related ER visits (KLAS 2024 Fall Management benchmark)",
-    "data_source": "Incident reports from pilot study, ER visit logs, competitor case study from Teton.ai deployment",
-    "assessment_criteria": "Compare pre/post hospitalization rates, validate against KLAS benchmark, review incident report trends"
+    "target": ">25% reduction vs baseline (KLAS 2024 Fall Management benchmark)",
+    "data_source": "Pilot incident logs, ER visit logs, Teton.ai case study",
+    "assessment_criteria": "Compare pre/post incident rates, validate against KLAS benchmark"
   }}
 ]
 ```
 
-**CRITICAL:**
-- Do NOT use generic questions like "What is the X?"
-- DO reference specific elements from the problem statement
-- DO use benchmarks from research context when available
-- DO mention specific vendors/products from competitor research
-- DO make targets specific and measurable
+**CRITICAL - Remember:**
+- Labels: 2-4 words, NO vendors, NO numbers (e.g., "Fall Incident Reduction")
+- Questions: Simple, 1 sentence, NO vendors (e.g., "What is the measured reduction?")
+- Targets: Include benchmarks and numbers HERE
+- Data sources: Include vendor names and studies HERE
 
 Return ONLY the JSON array, no other text."""
 
@@ -147,7 +156,7 @@ def generate_problem_specific_l2_branches(
     market_research: Optional[str] = None,
     competitor_research: Optional[str] = None,
     num_branches: int = 3,
-    model_name: str = "gemini-2.5-flash-lite",
+    model_name: str = "gemini-1.5-flash",
 ) -> Dict[str, Dict]:
     """
     Generate problem-specific L2 branches using LLM with research context.
@@ -181,18 +190,28 @@ def generate_problem_specific_l2_branches(
 - Description: {l1_description}
 {context_section}
 
-**Task:** Generate {num_branches} problem-specific L2 branches that decompose the L1 category into distinct analysis dimensions.
+**Task:** Generate {num_branches} problem-specific L2 branches following MECE principles.
 
-**Requirements:**
+**CRITICAL Label/Question Rules:**
+
+1. **Labels**: Concise phrases (2-5 words), descriptive but not overly specific, NO vendor names
+   - ✓ Good: "Clinical Impact", "Financial Impact", "Stakeholder Value"
+   - ✗ Bad: "Teton.ai Clinical Results", "30% Cost Reduction Analysis"
+
+2. **Questions**: Clean, focused questions (1 sentence), NO vendor names
+   - ✓ Good: "Does it meaningfully improve resident outcomes?"
+   - ✗ Bad: Long paragraphs or vendor-specific questions
+
+**MECE Requirements:**
 1. **Mutually Exclusive** - No overlap between branches
 2. **Collectively Exhaustive** - Cover all important aspects of the L1 category
-3. **Problem-Specific** - NOT generic templates, but tailored to this specific question
-4. **Actionable** - Each branch should be analyzable with available data
+3. **Problem-Specific** - Tailored to this specific question
+4. **Actionable** - Each branch analyzable with available data
 
 **Output Format (JSON):**
 Return a JSON object where keys are branch identifiers (UPPERCASE_SNAKE_CASE) and values contain:
-- "label": Branch label (e.g., "Patient Safety Impact")
-- "question": Specific question this branch answers (e.g., "Does it reduce patient injury rates?")
+- "label": Concise phrase (2-5 words, NO vendors)
+- "question": Clean, focused question (1 sentence, NO vendors)
 
 **Example for "fall detection" problem under DESIRABILITY:**
 ```json
@@ -212,11 +231,11 @@ Return a JSON object where keys are branch identifiers (UPPERCASE_SNAKE_CASE) an
 }}
 ```
 
-**CRITICAL:**
-- Branch labels should reflect the problem domain (e.g., "Patient Safety" not just "Safety")
-- Questions should be specific to the problem statement
-- Use insights from research context to identify relevant dimensions
+**CRITICAL - Remember:**
+- Labels: 2-5 words, descriptive, NO vendors (e.g., "Clinical Impact")
+- Questions: 1 sentence, focused, NO vendors
 - Ensure MECE compliance (no overlap, full coverage)
+- Reflect problem domain, not generic categories
 
 Return ONLY the JSON object, no other text."""
 

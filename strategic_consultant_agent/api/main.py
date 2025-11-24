@@ -14,6 +14,14 @@ from typing import Any, Optional
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
 from strategic_consultant_agent.tools.framework_loader import FrameworkLoader
+from strategic_consultant_agent.tools.persistence import save_analysis, load_analysis
+
+# Import for Google Search research
+import os
+import asyncio
+from google.adk.agents import Agent
+from google.adk.models.google_llm import Gemini
+from google.adk.tools import google_search
 
 app = FastAPI(title="HypothesisTree Pro API", version="1.0.0")
 
@@ -25,6 +33,87 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Helper functions for Google Search research
+def run_agent_sync(agent: Agent, input_text: str) -> str:
+    """
+    Run ADK agent synchronously and extract final output.
+
+    Consumes the async generator from run_live() and returns the final text output.
+    """
+    async def run():
+        events = agent.run_live(input_text)
+        final_output = ""
+
+        async for event in events:
+            # Extract text output from events
+            if hasattr(event, 'output') and event.output:
+                final_output = str(event.output)
+            elif hasattr(event, 'text') and event.text:
+                final_output = str(event.text)
+
+        return final_output if final_output else "No research results available"
+
+    return asyncio.run(run())
+
+
+def perform_research(problem: str) -> tuple[str, str]:
+    """
+    Perform market and competitor research using Google Search.
+
+    Returns:
+        tuple: (market_research, competitor_research)
+    """
+    print(f"  → Running market research with Google Search...")
+
+    # Market research agent
+    market_agent = Agent(
+        name="market_researcher",
+        model=Gemini(model="gemini-1.5-flash"),
+        instruction=f"""You are a market research analyst specializing in healthcare technology and senior living industries.
+
+Your task is to research the market context for: {problem}
+
+Use the google_search tool to find current, credible data. Focus on:
+1. **Market Size & Growth**: Total addressable market, growth rates, key segments
+2. **Industry Trends**: Technology adoption trends, regulatory changes, demographic shifts
+3. **Benchmarks**: Industry standards for success metrics, typical ROI, adoption rates (cite specific sources like KLAS, McKinsey, LeadingAge)
+4. **Key Players**: Major vendors, market leaders, emerging disruptors
+
+Provide a structured summary with specific numbers and citations.
+If search results are limited, note the data gaps clearly.""",
+        tools=[google_search]
+    )
+
+    market_research = run_agent_sync(market_agent, problem)
+
+    print(f"  → Running competitor research with Google Search...")
+
+    # Competitor research agent
+    competitor_agent = Agent(
+        name="competitor_researcher",
+        model=Gemini(model="gemini-1.5-flash"),
+        instruction=f"""You are a competitive intelligence analyst specializing in healthcare technology.
+
+Your task is to research the competitive landscape for: {problem}
+
+Use the google_search tool to find current information. Focus on:
+1. **Key Vendors**: Who are the major players in this space? Include specific company names
+2. **Product Capabilities**: What features do they offer? Strengths/weaknesses?
+3. **Pricing Models**: How do vendors price (per unit, subscription, etc.)? Include specific prices if available
+4. **Customer Reviews**: What do customers say about implementation, support, results?
+5. **Case Studies**: Any published success stories or failure analyses?
+
+Search for terms like "[vendor name] reviews", "[vendor name] pricing", "[technology type] vendors comparison"
+
+Provide an objective analysis with sources. Include both positives and negatives.""",
+        tools=[google_search]
+    )
+
+    competitor_research = run_agent_sync(competitor_agent, problem)
+
+    return market_research, competitor_research
 
 
 # Request/Response Models
@@ -75,14 +164,61 @@ async def root():
 
 @app.post("/api/tree/generate")
 async def generate_tree(request: TreeGenerateRequest):
-    """Generate new tree from framework template."""
+    """Generate new tree with automated research (cached for performance)."""
     try:
+        # Step 1: Try to load cached research from disk
+        market_research = ""
+        competitor_research = ""
+        cached = False
+
+        try:
+            research_data = load_analysis(
+                project_name=request.problem,
+                analysis_type="research"
+            )
+            # Use cached research from disk
+            market_research = research_data["content"].get("market_research", "")
+            competitor_research = research_data["content"].get("competitor_research", "")
+            cached = True
+            print(f"✓ Loaded cached research for: {request.problem}")
+        except FileNotFoundError:
+            # No cache - run research with Google Search
+            print(f"⚡ Running fresh research with Google Search for: {request.problem}")
+
+            try:
+                market_research, competitor_research = perform_research(request.problem)
+            except Exception as e:
+                print(f"Research error: {e}")
+                market_research = f"Market research unavailable: {str(e)}"
+                competitor_research = f"Competitor research unavailable: {str(e)}"
+
+            # Save research to disk for future use (persists across restarts)
+            save_analysis(
+                project_name=request.problem,
+                analysis_type="research",
+                content={
+                    "market_research": market_research,
+                    "competitor_research": competitor_research
+                }
+            )
+            print(f"✓ Saved research cache for: {request.problem}")
+
+        # Step 2: Generate tree with research context and LLM-powered L2/L3
         tree = generate_hypothesis_tree(
             problem=request.problem,
-            framework=request.framework
+            framework=request.framework,
+            market_research=market_research,
+            competitor_research=competitor_research,
+            use_llm_generation=True  # Enable dynamic, problem-specific content
         )
+
         return {
             "tree": tree,
+            "research": {
+                "market": market_research[:500] + "..." if len(market_research) > 500 else market_research,
+                "competitor": competitor_research[:500] + "..." if len(competitor_research) > 500 else competitor_research,
+                "cached": cached
+            },
             "timestamp": datetime.now().isoformat(),
             "status": "success"
         }
