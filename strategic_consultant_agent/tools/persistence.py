@@ -22,7 +22,9 @@ def save_analysis(
 
     Args:
         project_name: Unique identifier for the project
-        analysis_type: One of [hypothesis_tree, matrix, research]
+        analysis_type: One of [hypothesis_tree, matrix_hypothesis_prioritization,
+                        matrix_risk_register, matrix_task_prioritization,
+                        matrix_measurement_priorities, research]
         content: The analysis content to save
         storage_dir: Optional custom storage directory
 
@@ -30,7 +32,14 @@ def save_analysis(
         dict: {"filepath": str, "version": int, "timestamp": str}
     """
     # Validate analysis type
-    valid_types = ["hypothesis_tree", "matrix", "research"]
+    valid_types = [
+        "hypothesis_tree",
+        "matrix_hypothesis_prioritization",
+        "matrix_risk_register",
+        "matrix_task_prioritization",
+        "matrix_measurement_priorities",
+        "research",
+    ]
     if analysis_type not in valid_types:
         raise ValueError(
             f"Invalid analysis_type '{analysis_type}'. "
@@ -313,3 +322,159 @@ def get_latest_version(
                 continue
 
     return max(versions) if versions else 0
+
+
+# Matrix-specific convenience functions
+
+
+def save_matrix(
+    project_name: str,
+    matrix_type: str,
+    matrix_data: Dict,
+    storage_dir: Optional[str] = None,
+) -> Dict:
+    """
+    Save a 2x2 matrix for a project.
+
+    Args:
+        project_name: Project name
+        matrix_type: One of [hypothesis_prioritization, risk_register,
+                     task_prioritization, measurement_priorities]
+        matrix_data: Matrix content including quadrants, placements, axes, etc.
+        storage_dir: Optional custom storage directory
+
+    Returns:
+        dict: Save result with filepath, version, timestamp
+    """
+    # Convert matrix_type to analysis_type format
+    analysis_type = f"matrix_{matrix_type}"
+
+    return save_analysis(
+        project_name=project_name,
+        analysis_type=analysis_type,
+        content=matrix_data,
+        storage_dir=storage_dir,
+    )
+
+
+def load_matrix(
+    project_name: str,
+    matrix_type: str,
+    version: Optional[int] = None,
+    storage_dir: Optional[str] = None,
+) -> Dict:
+    """
+    Load a 2x2 matrix for a project.
+
+    Args:
+        project_name: Project name
+        matrix_type: One of [hypothesis_prioritization, risk_register,
+                     task_prioritization, measurement_priorities]
+        version: Specific version (optional, default: latest)
+        storage_dir: Optional custom storage directory
+
+    Returns:
+        dict: Matrix data with metadata
+    """
+    # Convert matrix_type to analysis_type format
+    analysis_type = f"matrix_{matrix_type}"
+
+    return load_analysis(
+        project_name=project_name,
+        analysis_type=analysis_type,
+        version=version,
+        storage_dir=storage_dir,
+    )
+
+
+def list_project_matrices(
+    project_name: str, storage_dir: Optional[str] = None
+) -> Dict:
+    """
+    List all matrices for a project.
+
+    Args:
+        project_name: Project name
+        storage_dir: Optional custom storage directory
+
+    Returns:
+        dict: Dictionary with matrix types as keys and lists of versions
+    """
+    # Load all analyses for project
+    try:
+        all_analyses = load_analysis(
+            project_name=project_name, analysis_type=None, storage_dir=storage_dir
+        )
+    except FileNotFoundError:
+        return {"project_name": project_name, "matrices": {}, "total_count": 0}
+
+    # Filter for matrix types only
+    matrices = {}
+    for analysis_type, versions in all_analyses.get("analyses", {}).items():
+        if analysis_type.startswith("matrix_"):
+            # Extract matrix type (e.g., "matrix_risk_register" -> "risk_register")
+            matrix_type = analysis_type.replace("matrix_", "")
+            matrices[matrix_type] = versions
+
+    return {
+        "project_name": project_name,
+        "matrices": matrices,
+        "total_count": sum(len(versions) for versions in matrices.values()),
+    }
+
+
+def get_all_project_data(
+    project_name: str, storage_dir: Optional[str] = None
+) -> Dict:
+    """
+    Load complete project data including hypothesis tree and all matrices.
+
+    Args:
+        project_name: Project name
+        storage_dir: Optional custom storage directory
+
+    Returns:
+        dict: {
+            "hypothesis_tree": {...},
+            "matrices": {
+                "hypothesis_prioritization": {...},
+                "risk_register": {...},
+                "task_prioritization": {...},
+                "measurement_priorities": {...}
+            }
+        }
+    """
+    result = {"hypothesis_tree": None, "matrices": {}}
+
+    # Load hypothesis tree (latest version)
+    try:
+        tree_data = load_analysis(
+            project_name=project_name,
+            analysis_type="hypothesis_tree",
+            storage_dir=storage_dir,
+        )
+        result["hypothesis_tree"] = tree_data.get("content")
+    except FileNotFoundError:
+        pass
+
+    # Load all matrices (latest versions)
+    matrix_types = [
+        "hypothesis_prioritization",
+        "risk_register",
+        "task_prioritization",
+        "measurement_priorities",
+    ]
+
+    for matrix_type in matrix_types:
+        try:
+            matrix_data = load_matrix(
+                project_name=project_name,
+                matrix_type=matrix_type,
+                storage_dir=storage_dir,
+            )
+            result["matrices"][matrix_type] = matrix_data.get("content")
+        except FileNotFoundError:
+            # Matrix doesn't exist yet, that's okay
+            result["matrices"][matrix_type] = None
+
+    return result
