@@ -3,13 +3,14 @@
 Provides REST API endpoints for tree generation, validation, and persistence.
 """
 
-from fastapi import FastAPI, HTTPException, WebSocket
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from datetime import datetime
 from pathlib import Path
 import json
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, AsyncGenerator
 import asyncio
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
@@ -163,9 +164,126 @@ async def root():
     }
 
 
+@app.post("/api/tree/generate-stream")
+async def generate_tree_stream(request: TreeGenerateRequest):
+    """Generate new tree with progress updates via Server-Sent Events."""
+
+    async def event_generator() -> AsyncGenerator[str, None]:
+        """Generate SSE events for progress updates."""
+        try:
+            # Helper to send progress event
+            def send_progress(stage: str, message: str, progress: int):
+                event_data = {
+                    "stage": stage,
+                    "message": message,
+                    "progress": progress,
+                    "timestamp": datetime.now().isoformat()
+                }
+                return f"data: {json.dumps(event_data)}\n\n"
+
+            # Stage 1: Check cache
+            yield send_progress("cache_check", "Checking for cached research...", 10)
+            await asyncio.sleep(0.1)  # Allow UI to update
+
+            market_research = ""
+            competitor_research = ""
+            cached = False
+
+            try:
+                research_data = load_analysis(
+                    project_name=request.problem,
+                    analysis_type="research"
+                )
+                market_research = research_data["content"].get("market_research", "")
+                competitor_research = research_data["content"].get("competitor_research", "")
+                cached = True
+                yield send_progress("cache_check", "✓ Found cached research", 20)
+            except FileNotFoundError:
+                yield send_progress("cache_check", "No cache found - running fresh research", 20)
+
+                # Stage 2: Market research
+                yield send_progress("market_research", "Running market research with Google Search...", 30)
+                await asyncio.sleep(0.1)
+
+                try:
+                    # Run research in thread pool to avoid blocking
+                    loop = asyncio.get_event_loop()
+                    market_research, competitor_research = await loop.run_in_executor(
+                        None, perform_research, request.problem
+                    )
+                    yield send_progress("market_research", "✓ Market research complete", 50)
+                except Exception as e:
+                    yield send_progress("market_research", f"⚠ Research error: {str(e)}", 50)
+                    market_research = f"Market research unavailable: {str(e)}"
+                    competitor_research = f"Competitor research unavailable: {str(e)}"
+
+                # Stage 3: Save research cache
+                yield send_progress("save_cache", "Saving research cache...", 60)
+                save_analysis(
+                    project_name=request.problem,
+                    analysis_type="research",
+                    content={
+                        "market_research": market_research,
+                        "competitor_research": competitor_research
+                    }
+                )
+                yield send_progress("save_cache", "✓ Research cached", 65)
+
+            # Stage 4: Generate tree
+            yield send_progress("generate_tree", "Generating hypothesis tree with LLM...", 70)
+            await asyncio.sleep(0.1)
+
+            loop = asyncio.get_event_loop()
+            tree = await loop.run_in_executor(
+                None,
+                generate_hypothesis_tree,
+                request.problem,
+                request.framework,
+                market_research,
+                competitor_research,
+                True  # use_llm_generation
+            )
+
+            yield send_progress("generate_tree", "✓ Tree generation complete", 100)
+
+            # Final result
+            result = {
+                "tree": tree,
+                "research": {
+                    "market": market_research[:500] + "..." if len(market_research) > 500 else market_research,
+                    "competitor": competitor_research[:500] + "..." if len(competitor_research) > 500 else competitor_research,
+                    "cached": cached
+                },
+                "timestamp": datetime.now().isoformat(),
+                "status": "success"
+            }
+
+            yield f"data: {json.dumps({'stage': 'complete', 'result': result})}\n\n"
+
+        except Exception as e:
+            error_event = {
+                "stage": "error",
+                "message": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
+            yield f"data: {json.dumps(error_event)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
 @app.post("/api/tree/generate")
 async def generate_tree(request: TreeGenerateRequest):
-    """Generate new tree with automated research (cached for performance)."""
+    """Generate new tree with automated research (cached for performance).
+
+    Non-streaming version for backward compatibility.
+    """
     try:
         # Step 1: Try to load cached research from disk
         market_research = ""

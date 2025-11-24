@@ -30,35 +30,26 @@ def _cleanup_label(label: str, max_words: int = 6) -> str:
         str: Cleaned, concise label
     """
     # Remove common verbose patterns (case-insensitive)
+    # Target: 3-6 words (balanced conciseness without losing meaning)
     verbose_patterns = [
-        # Verbose prefixes to remove
+        # Remove only the most verbose prefixes
         ("Improvement in ", ""),
         ("Reduction in ", ""),
-        ("Decrease in ", ""),
-        ("Increase in ", ""),
         ("Enhancement of ", ""),
         ("Assessment of ", ""),
         ("Evaluation of ", ""),
         ("Analysis of ", ""),
-        ("Optimized ", ""),
-        ("Reduced ", ""),
 
-        # Verbose suffixes and phrases to remove
+        # Remove overly specific suffixes
         (" with Computer Vision", ""),
-        (" for Falls", ""),
         (" Requiring Medical Intervention", ""),
         (" Due to Fall Response", ""),
-        (" and Scalability Potential", ""),
-        (" and Accuracy", ""),
         (" from Direct Incident Response", ""),
-        (" to Verified Falls", ""),
         (" Based on Real-time Needs", ""),
-        (" Post-Fall", ""),
-        (" Levels", ""),
-        (" Leading to Serious Injury", ""),
 
-        # Generic cleanup
-        (" Reallocation", " Allocation"),  # Shorter synonym
+        # Keep meaningful words but remove redundancy
+        (" and Scalability Potential", ""),  # "Scalability" alone is clear
+        (" and Accuracy", ""),  # "Robustness" alone is clear
     ]
 
     cleaned = label
