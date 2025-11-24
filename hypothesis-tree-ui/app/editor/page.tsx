@@ -7,6 +7,7 @@ import { MainTreeView } from '@/components/layout/MainTreeView';
 import { DebugPanel } from '@/components/layout/DebugPanel';
 import { TreeControls } from '@/components/layout/TreeControls';
 import { Matrix2x2 } from '@/components/prioritization/Matrix2x2';
+import { Matrix2x2Editor } from '@/components/prioritization/Matrix2x2Editor';
 import { api } from '@/lib/api-client';
 import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, NodeLevel, PriorityMatrix } from '@/lib/types';
 
@@ -248,6 +249,51 @@ function EditorContent() {
     }
   }
 
+  // Matrix CRUD operations
+  async function handleAddMatrixItem(quadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', item: string) {
+    try {
+      const result = await api.addMatrixItem(projectId, quadrant, item);
+      setPriorityMatrix(result.matrix);
+      addDebugLog(`Added item to ${quadrant}`, 'success');
+    } catch (error) {
+      addDebugLog(`Failed to add matrix item: ${error}`, 'error');
+      throw error;
+    }
+  }
+
+  async function handleDeleteMatrixItem(quadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', itemIndex: number) {
+    try {
+      const result = await api.deleteMatrixItem(projectId, quadrant, itemIndex);
+      setPriorityMatrix(result.matrix);
+      addDebugLog(`Deleted item from ${quadrant}`, 'success');
+    } catch (error) {
+      addDebugLog(`Failed to delete matrix item: ${error}`, 'error');
+      throw error;
+    }
+  }
+
+  async function handleEditMatrixItem(quadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', itemIndex: number, newText: string) {
+    try {
+      const result = await api.editMatrixItem(projectId, quadrant, itemIndex, newText);
+      setPriorityMatrix(result.matrix);
+      addDebugLog(`Edited item in ${quadrant}`, 'success');
+    } catch (error) {
+      addDebugLog(`Failed to edit matrix item: ${error}`, 'error');
+      throw error;
+    }
+  }
+
+  async function handleMoveMatrixItem(fromQuadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', toQuadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', itemIndex: number) {
+    try {
+      const result = await api.moveMatrixItem(projectId, fromQuadrant, toQuadrant, itemIndex);
+      setPriorityMatrix(result.matrix);
+      addDebugLog(`Moved item from ${fromQuadrant} to ${toQuadrant}`, 'success');
+    } catch (error) {
+      addDebugLog(`Failed to move matrix item: ${error}`, 'error');
+      throw error;
+    }
+  }
+
   function handleGoHome() {
     if (hasUnsavedChanges) {
       if (!confirm('You have unsaved changes. Leave anyway?')) {
@@ -403,7 +449,15 @@ function EditorContent() {
         {activeTab === 'matrix' && (
           <div className="flex-1 overflow-auto p-6">
             {priorityMatrix ? (
-              <Matrix2x2 matrixData={priorityMatrix} />
+              <Matrix2x2Editor
+                projectId={projectId}
+                matrixData={priorityMatrix}
+                onMatrixUpdate={setPriorityMatrix}
+                onAddItem={handleAddMatrixItem}
+                onDeleteItem={handleDeleteMatrixItem}
+                onEditItem={handleEditMatrixItem}
+                onMoveItem={handleMoveMatrixItem}
+              />
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">

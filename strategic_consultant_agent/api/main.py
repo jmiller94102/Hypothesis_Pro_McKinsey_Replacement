@@ -761,6 +761,267 @@ async def get_priority_matrix(project_id: str, version: Optional[int] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/api/matrix/save")
+async def save_priority_matrix(request: Request):
+    """
+    Save updated priority matrix (add, edit, delete, move operations).
+
+    Request body:
+        {
+            "project_id": "project_uuid",
+            "matrix": { ... matrix data ... },
+            "description": "Version description (optional)"
+        }
+
+    Returns:
+        dict: Save result with version and timestamp
+    """
+    try:
+        data = await request.json()
+        project_id = data.get("project_id")
+        matrix = data.get("matrix")
+        description = data.get("description", "Matrix updated")
+
+        if not project_id or not matrix:
+            raise HTTPException(status_code=400, detail="Missing project_id or matrix data")
+
+        # Save using persistence layer
+        result = save_analysis(
+            project_name=project_id,
+            analysis_type="matrix",
+            content=matrix
+        )
+
+        return {
+            "success": True,
+            "filepath": result["filepath"],
+            "version": result["version"],
+            "timestamp": result["timestamp"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/matrix/add-item")
+async def add_matrix_item(request: Request):
+    """
+    Add new item to a quadrant.
+
+    Request body:
+        {
+            "project_id": "project_uuid",
+            "quadrant": "Q1" | "Q2" | "Q3" | "Q4",
+            "item": "Item text"
+        }
+
+    Returns:
+        dict: Updated matrix
+    """
+    try:
+        data = await request.json()
+        project_id = data.get("project_id")
+        quadrant = data.get("quadrant")
+        item = data.get("item")
+
+        if not all([project_id, quadrant, item]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+
+        if quadrant not in ["Q1", "Q2", "Q3", "Q4"]:
+            raise HTTPException(status_code=400, detail="Invalid quadrant")
+
+        # Load current matrix
+        result = load_analysis(project_name=project_id, analysis_type="matrix")
+        matrix = result["content"]
+
+        # Add item to quadrant
+        if quadrant not in matrix.get("placements", {}):
+            matrix["placements"][quadrant] = []
+
+        matrix["placements"][quadrant].append(item)
+
+        # Save updated matrix
+        save_result = save_analysis(
+            project_name=project_id,
+            analysis_type="matrix",
+            content=matrix
+        )
+
+        return {
+            "success": True,
+            "matrix": matrix,
+            "version": save_result["version"]
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/matrix/delete-item")
+async def delete_matrix_item(request: Request):
+    """
+    Delete item from a quadrant.
+
+    Request body:
+        {
+            "project_id": "project_uuid",
+            "quadrant": "Q1" | "Q2" | "Q3" | "Q4",
+            "item_index": 0
+        }
+
+    Returns:
+        dict: Updated matrix
+    """
+    try:
+        data = await request.json()
+        project_id = data.get("project_id")
+        quadrant = data.get("quadrant")
+        item_index = data.get("item_index")
+
+        if not all([project_id, quadrant, item_index is not None]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+
+        # Load current matrix
+        result = load_analysis(project_name=project_id, analysis_type="matrix")
+        matrix = result["content"]
+
+        # Delete item
+        if quadrant in matrix.get("placements", {}) and 0 <= item_index < len(matrix["placements"][quadrant]):
+            del matrix["placements"][quadrant][item_index]
+        else:
+            raise HTTPException(status_code=400, detail="Invalid quadrant or index")
+
+        # Save updated matrix
+        save_result = save_analysis(
+            project_name=project_id,
+            analysis_type="matrix",
+            content=matrix
+        )
+
+        return {
+            "success": True,
+            "matrix": matrix,
+            "version": save_result["version"]
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/matrix/edit-item")
+async def edit_matrix_item(request: Request):
+    """
+    Edit item text in a quadrant.
+
+    Request body:
+        {
+            "project_id": "project_uuid",
+            "quadrant": "Q1" | "Q2" | "Q3" | "Q4",
+            "item_index": 0,
+            "new_text": "Updated item text"
+        }
+
+    Returns:
+        dict: Updated matrix
+    """
+    try:
+        data = await request.json()
+        project_id = data.get("project_id")
+        quadrant = data.get("quadrant")
+        item_index = data.get("item_index")
+        new_text = data.get("new_text")
+
+        if not all([project_id, quadrant, item_index is not None, new_text]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+
+        # Load current matrix
+        result = load_analysis(project_name=project_id, analysis_type="matrix")
+        matrix = result["content"]
+
+        # Edit item
+        if quadrant in matrix.get("placements", {}) and 0 <= item_index < len(matrix["placements"][quadrant]):
+            matrix["placements"][quadrant][item_index] = new_text
+        else:
+            raise HTTPException(status_code=400, detail="Invalid quadrant or index")
+
+        # Save updated matrix
+        save_result = save_analysis(
+            project_name=project_id,
+            analysis_type="matrix",
+            content=matrix
+        )
+
+        return {
+            "success": True,
+            "matrix": matrix,
+            "version": save_result["version"]
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/matrix/move-item")
+async def move_matrix_item(request: Request):
+    """
+    Move item from one quadrant to another.
+
+    Request body:
+        {
+            "project_id": "project_uuid",
+            "from_quadrant": "Q1",
+            "to_quadrant": "Q2",
+            "item_index": 0
+        }
+
+    Returns:
+        dict: Updated matrix
+    """
+    try:
+        data = await request.json()
+        project_id = data.get("project_id")
+        from_quadrant = data.get("from_quadrant")
+        to_quadrant = data.get("to_quadrant")
+        item_index = data.get("item_index")
+
+        if not all([project_id, from_quadrant, to_quadrant, item_index is not None]):
+            raise HTTPException(status_code=400, detail="Missing required fields")
+
+        # Load current matrix
+        result = load_analysis(project_name=project_id, analysis_type="matrix")
+        matrix = result["content"]
+
+        # Move item
+        if from_quadrant in matrix.get("placements", {}) and 0 <= item_index < len(matrix["placements"][from_quadrant]):
+            item = matrix["placements"][from_quadrant].pop(item_index)
+
+            if to_quadrant not in matrix["placements"]:
+                matrix["placements"][to_quadrant] = []
+
+            matrix["placements"][to_quadrant].append(item)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid quadrant or index")
+
+        # Save updated matrix
+        save_result = save_analysis(
+            project_name=project_id,
+            analysis_type="matrix",
+            content=matrix
+        )
+
+        return {
+            "success": True,
+            "matrix": matrix,
+            "version": save_result["version"]
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Matrix not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
