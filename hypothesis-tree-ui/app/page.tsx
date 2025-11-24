@@ -79,11 +79,11 @@ export default function HomePage() {
             finalResult = data.result;
             eventSource.close();
 
-            // Save and navigate
-            const projectName = newProjectProblem.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50);
-            api.saveTree(projectName, finalResult.tree, 'Initial version')
+            // Use project_id from backend response
+            const projectId = finalResult.project_id;
+            api.saveTree(projectId, finalResult.tree, 'Initial version')
               .then(() => {
-                router.push(`/editor?project=${projectName}`);
+                router.push(`/editor?id=${projectId}`);
               })
               .catch((err) => {
                 console.error('Failed to save:', err);
@@ -114,12 +114,11 @@ export default function HomePage() {
         if (!finalResult) {
           console.log('Falling back to non-streaming API...');
           api.generateTree(newProjectProblem, selectedFramework)
-            .then(({ tree }) => {
-              const projectName = newProjectProblem.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50);
-              return api.saveTree(projectName, tree, 'Initial version').then(() => projectName);
+            .then(({ tree, project_id }) => {
+              return api.saveTree(project_id, tree, 'Initial version').then(() => project_id);
             })
-            .then((projectName) => {
-              router.push(`/editor?project=${projectName}`);
+            .then((projectId) => {
+              router.push(`/editor?id=${projectId}`);
             })
             .catch((err) => {
               console.error('Fallback failed:', err);

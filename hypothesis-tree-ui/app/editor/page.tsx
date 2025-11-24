@@ -12,7 +12,7 @@ import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, No
 function EditorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectName = searchParams.get('project') || '';
+  const projectId = searchParams.get('id') || '';  // Use 'id' param for project UUID
 
   const [tree, setTree] = useState<HypothesisTree | null>(null);
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
@@ -25,13 +25,13 @@ function EditorContent() {
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (projectName) {
+    if (projectId) {
       loadProject();
     } else {
       setLoading(false);
       addDebugLog('No project specified', 'error');
     }
-  }, [projectName]);
+  }, [projectId]);
 
   function addDebugLog(message: string, type: DebugLog['type'] = 'info') {
     setDebugLogs((prev) => [
@@ -46,17 +46,17 @@ function EditorContent() {
 
   async function loadProject() {
     try {
-      addDebugLog(`Loading project: ${projectName}`, 'info');
+      addDebugLog(`Loading project: ${projectId}`, 'info');
       const [treeRes, versionsRes] = await Promise.all([
-        api.loadTree(projectName),
-        api.listVersions(projectName),
+        api.loadTree(projectId),
+        api.listVersions(projectId),
       ]);
 
       setTree(treeRes.data.content);
       setVersions(versionsRes.versions);
       setHasUnsavedChanges(false);
       addDebugLog(
-        `Loaded ${projectName} v${treeRes.data.metadata.version}`,
+        `Loaded project ${projectId} v${treeRes.data.metadata.version}`,
         'success'
       );
     } catch (error) {
@@ -73,7 +73,7 @@ function EditorContent() {
     try {
       addDebugLog('Saving project...', 'info');
       const result = await api.saveTree(
-        projectName,
+        projectId,
         tree,
         `Version ${versions.length + 1}`
       );
@@ -131,10 +131,10 @@ function EditorContent() {
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${projectName}_export.json`;
+      link.download = `${projectId}_export.json`;
       link.click();
       URL.revokeObjectURL(url);
-      addDebugLog(`Exported to ${projectName}_export.json`, 'success');
+      addDebugLog(`Exported to ${projectId}_export.json`, 'success');
     } catch (error) {
       addDebugLog(`Export failed: ${error}`, 'error');
     }
@@ -143,7 +143,7 @@ function EditorContent() {
   async function handleLoadVersion(version: number) {
     try {
       addDebugLog(`Loading version ${version}...`, 'info');
-      const result = await api.loadTree(projectName, version);
+      const result = await api.loadTree(projectId, version);
       setTree(result.data.content);
       setHasUnsavedChanges(false);
       addDebugLog(`Loaded v${version}`, 'success');
@@ -276,11 +276,11 @@ function EditorContent() {
     );
   }
 
-  if (!projectName) {
+  if (!projectId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
         <div className="text-center">
-          <div className="text-xl text-red-400 mb-4">No project specified</div>
+          <div className="text-xl text-red-400 mb-4">No project ID specified</div>
           <button
             onClick={() => router.push('/')}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded"
@@ -296,7 +296,7 @@ function EditorContent() {
     <div className="h-screen flex bg-gray-950 text-gray-100">
       {/* Left Sidebar - Fixed */}
       <Sidebar
-        projectName={projectName}
+        projectName={projectId}  // Pass project ID (will display as ID for now)
         hasUnsavedChanges={hasUnsavedChanges}
         meceStatus={meceStatus}
         versions={versions}

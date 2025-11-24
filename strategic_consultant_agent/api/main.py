@@ -12,6 +12,7 @@ from pathlib import Path
 import json
 from typing import Any, Optional, Dict, AsyncGenerator
 import asyncio
+import uuid
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
@@ -193,7 +194,7 @@ class UpdateNodeRequest(BaseModel):
 
 class SaveRequest(BaseModel):
     """Request model for saving a tree."""
-    project_name: str
+    project_id: str  # UUID-based project ID
     tree: dict[str, Any]
     description: Optional[str] = None
 
@@ -219,8 +220,8 @@ async def generate_tree_stream(problem: str, framework: str):
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events for progress updates."""
         try:
-            # Sanitize project name to match frontend (ensures same folder)
-            sanitized_project_name = sanitize_project_name_for_frontend(problem)
+            # Generate unique project ID (UUID)
+            project_id = str(uuid.uuid4())[:8]  # Short UUID for readability
 
             # Helper to send progress event
             def send_progress(stage: str, message: str, progress: int):
@@ -242,7 +243,7 @@ async def generate_tree_stream(problem: str, framework: str):
 
             try:
                 research_data = load_analysis(
-                    project_name=sanitized_project_name,
+                    project_name=project_id,
                     analysis_type="research"
                 )
                 market_research = research_data["content"].get("market_research", "")
@@ -271,11 +272,13 @@ async def generate_tree_stream(problem: str, framework: str):
                 # Stage 3: Save research cache
                 yield send_progress("save_cache", "Saving research cache...", 60)
                 save_analysis(
-                    project_name=sanitized_project_name,
+                    project_name=project_id,
                     analysis_type="research",
                     content={
                         "market_research": market_research,
-                        "competitor_research": competitor_research
+                        "competitor_research": competitor_research,
+                        "problem": problem,  # Store original problem for reference
+                        "framework": framework
                     }
                 )
                 yield send_progress("save_cache", "✓ Research cached", 65)
@@ -299,6 +302,7 @@ async def generate_tree_stream(problem: str, framework: str):
 
             # Final result
             result = {
+                "project_id": project_id,  # Return project ID to frontend
                 "tree": tree,
                 "research": {
                     "market": market_research[:500] + "..." if len(market_research) > 500 else market_research,
@@ -530,9 +534,9 @@ async def save_tree(request: SaveRequest):
         if request.description and isinstance(tree_content, dict):
             tree_content["description"] = request.description
 
-        # Use centralized save_analysis function for consistent sanitization
+        # Use project_id as the storage key
         result = save_analysis(
-            project_name=request.project_name,
+            project_name=request.project_id,
             analysis_type="hypothesis_tree",
             content=tree_content
         )
@@ -547,13 +551,13 @@ async def save_tree(request: SaveRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/tree/load/{project_name}")
-async def load_tree(project_name: str, version: Optional[int] = None):
+@app.get("/api/tree/load/{project_id}")
+async def load_tree(project_id: str, version: Optional[int] = None):
     """Load tree (latest version or specific version)."""
     try:
-        # Use centralized load_analysis function for consistent sanitization
+        # Use project_id to load analysis
         result = load_analysis(
-            project_name=project_name,
+            project_name=project_id,
             analysis_type="hypothesis_tree",
             version=version
         )
@@ -568,14 +572,14 @@ async def load_tree(project_name: str, version: Optional[int] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/tree/versions/{project_name}")
-async def list_versions(project_name: str):
+@app.get("/api/tree/versions/{project_id}")
+async def list_versions(project_id: str):
     """List all saved versions of a project."""
     try:
-        # Use sanitized filename to find correct project directory
+        # Use project_id directly (UUIDs don't need sanitization)
         from strategic_consultant_agent.tools.persistence import _sanitize_filename
 
-        sanitized_name = _sanitize_filename(project_name)
+        sanitized_name = _sanitize_filename(project_id)
         project_dir = Path(f"storage/projects/{sanitized_name}")
 
         if not project_dir.exists():
