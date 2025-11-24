@@ -76,6 +76,176 @@ def _cleanup_label(label: str, max_words: int = 6) -> str:
     return cleaned.strip()
 
 
+def generate_l1_category_batch(
+    l1_key: str,
+    l1_data: Dict[str, Any],
+    problem_statement: str,
+    market_research: Optional[str] = None,
+    competitor_research: Optional[str] = None,
+    num_leaves_per_branch: int = 3,
+    model_name: str = "gemini-2.5-flash",
+) -> Dict[str, List[Dict]]:
+    """
+    Generate all L3 leaves for a single L1 category in one LLM call.
+
+    This batches by L1 category: 3 calls for scale_decision (DESIRABILITY, FEASIBILITY, VIABILITY).
+    Much faster than 9 sequential calls, and more manageable than 1 giant call.
+
+    Args:
+        l1_key: L1 category identifier (e.g., "DESIRABILITY")
+        l1_data: L1 category data including label, question, and L2 branches
+        problem_statement: The strategic question being analyzed
+        market_research: Market research context (optional)
+        competitor_research: Competitive analysis context (optional)
+        num_leaves_per_branch: Number of L3 leaves per L2 branch (default: 3)
+        model_name: Gemini model to use
+
+    Returns:
+        dict: {L2_key: [L3_leaves]} for this L1 category
+    """
+    # Build context section
+    context_section = ""
+    if market_research:
+        context_section += f"\n**Market Research Context:**\n{market_research}\n"
+    if competitor_research:
+        context_section += f"\n**Competitor Research Context:**\n{competitor_research}\n"
+
+    # Build L2 branch structure for this L1
+    l1_label = l1_data.get("label", l1_key)
+    l1_question = l1_data.get("question", "")
+    l1_description = l1_data.get("description", "")
+
+    l2_structure = []
+    for l2_key, l2_data in l1_data.get("L2_branches", {}).items():
+        l2_label = l2_data.get("label", l2_key)
+        l2_question = l2_data.get("question", "")
+        l2_structure.append(f"  - **{l2_key}**: {l2_label}")
+        l2_structure.append(f"    Question: {l2_question}")
+
+    l2_structure_text = "\n".join(l2_structure)
+
+    prompt = f"""You are a senior strategy consultant generating problem-specific L3 hypotheses for a strategic decision tree.
+
+**Strategic Question:** {problem_statement}
+
+**L1 Category:** {l1_key} - {l1_label}
+- Question: {l1_question}
+- Description: {l1_description}
+
+**L2 Branches in this category:**
+{l2_structure_text}
+{context_section}
+
+**Task:** Generate {num_leaves_per_branch} problem-specific L3 leaves (testable hypotheses) for EACH of the L2 branches above.
+
+**CRITICAL Label/Question Rules:**
+
+1. **Labels**: Concise key phrases (3-6 words), NO vendor names, NO specific numbers
+   - ✓ Good: "Fall Incident Reduction", "Response Time Improvement", "Care Workflow Efficiency"
+   - ✗ Bad: "Resident-Reported Fear via Teton.ai", "30% Fall Reduction"
+
+2. **Questions**: Clean, simple questions (1 sentence max), NO vendor names
+   - ✓ Good: "What is the measured reduction in fall incidents?"
+   - ✗ Bad: Long paragraphs with vendor references
+
+3. **Targets**: Include benchmarks and citations HERE (not in labels)
+   - ✓ Good: ">25% reduction vs baseline (KLAS 2024 benchmark)"
+
+4. **Data Sources**: Put vendor names HERE (not in labels/questions)
+   - ✓ Good: "Pilot logs, Teton.ai case study, KLAS 2024 report"
+
+**MECE Requirements:**
+- Within each L2 branch, the {num_leaves_per_branch} L3 leaves must be Mutually Exclusive (no overlap) and Collectively Exhaustive (cover all key aspects)
+- Ensure leaves are specific to the problem and informed by research context
+
+**Output Format (JSON):**
+Return a JSON object where:
+- Keys are L2_branch identifiers (from the list above)
+- Values are arrays of {num_leaves_per_branch} L3 leaf objects
+
+Each L3 leaf must contain:
+- "label": Concise key phrase (3-6 words, NO vendors)
+- "question": Simple question (1 sentence, NO vendors)
+- "metric_type": One of ["quantitative", "qualitative", "binary"]
+- "target": Specific target with benchmark citations
+- "data_source": Specific sources including vendor studies
+- "assessment_criteria": How to evaluate
+
+**Example structure:**
+```json
+{{
+  "L2_BRANCH_1": [
+    {{
+      "label": "Fall Incident Reduction",
+      "question": "What is the measured reduction in fall incidents?",
+      "metric_type": "quantitative",
+      "target": ">25% reduction vs baseline (KLAS 2024)",
+      "data_source": "Pilot logs, ER visit logs, vendor case studies",
+      "assessment_criteria": "Compare pre/post incident rates"
+    }},
+    ... {num_leaves_per_branch - 1} more leaves
+  ],
+  "L2_BRANCH_2": [ ... {num_leaves_per_branch} leaves ... ],
+  ...
+}}
+```
+
+**CRITICAL - Remember:**
+- Labels: 3-6 words, NO vendors, NO numbers
+- Questions: Simple, 1 sentence, NO vendors
+- Generate {num_leaves_per_branch} leaves for EVERY L2 branch
+- Ensure MECE compliance within each L2
+
+Return ONLY the JSON object, no other text."""
+
+    # Initialize client
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    # Generate content
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt,
+    )
+
+    # Parse JSON response
+    try:
+        # Extract response text
+        response_text = response.text.strip()
+
+        # Extract JSON from response (handle markdown code blocks)
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        l2_leaves = json.loads(response_text)
+
+        # Clean up labels and add IDs and status fields
+        leaf_counter = 1
+        for l2_key, leaves in l2_leaves.items():
+            for leaf in leaves:
+                # CRITICAL: Enforce label conciseness (max 6 words)
+                if "label" in leaf:
+                    leaf["label"] = _cleanup_label(leaf["label"], max_words=6)
+
+                leaf["id"] = f"L3_{leaf_counter:03d}"
+                leaf["status"] = "UNTESTED"
+                leaf["confidence"] = None
+                leaf["components"] = []
+                leaf_counter += 1
+
+        return l2_leaves
+
+    except (json.JSONDecodeError, AttributeError, KeyError) as e:
+        # Fallback: return empty structure
+        print(f"Warning: Failed to parse L1-batched LLM response for {l1_key}: {e}")
+        print(f"Response was: {response}")
+        return {}
+
+
 def generate_entire_tree_l3_leaves_batch(
     framework_structure: Dict[str, Any],
     problem_statement: str,
@@ -85,9 +255,53 @@ def generate_entire_tree_l3_leaves_batch(
     model_name: str = "gemini-2.5-flash",
 ) -> Dict[str, Dict[str, List[Dict]]]:
     """
-    Generate ALL L3 leaves for the entire tree in a single batched LLM call.
+    Generate ALL L3 leaves for the entire tree, batched by L1 category.
 
-    This is 70% faster than sequential generation (1 call vs 9 calls for scale_decision).
+    This makes 3 LLM calls (one per L1) instead of 9 (one per L2).
+    Better balance: smaller prompts than full-tree batch, but still much faster than sequential.
+
+    Args:
+        framework_structure: The framework template with L1 categories and L2 branches
+        problem_statement: The strategic question being analyzed
+        market_research: Market research context (optional)
+        competitor_research: Competitive analysis context (optional)
+        num_leaves_per_branch: Number of L3 leaves per L2 branch (default: 3)
+        model_name: Gemini model to use
+
+    Returns:
+        dict: Nested dict structure {L1_key: {L2_key: [L3_leaves]}}
+    """
+    # Generate L3 leaves for each L1 category (can be parallelized)
+    all_leaves = {}
+
+    for l1_key, l1_data in framework_structure.items():
+        l2_leaves = generate_l1_category_batch(
+            l1_key=l1_key,
+            l1_data=l1_data,
+            problem_statement=problem_statement,
+            market_research=market_research,
+            competitor_research=competitor_research,
+            num_leaves_per_branch=num_leaves_per_branch,
+            model_name=model_name,
+        )
+        all_leaves[l1_key] = l2_leaves
+
+    return all_leaves
+
+
+def generate_entire_tree_l3_leaves_batch_OLD(
+    framework_structure: Dict[str, Any],
+    problem_statement: str,
+    market_research: Optional[str] = None,
+    competitor_research: Optional[str] = None,
+    num_leaves_per_branch: int = 3,
+    model_name: str = "gemini-2.5-flash",
+) -> Dict[str, Dict[str, List[Dict]]]:
+    """
+    OLD VERSION: Generate ALL L3 leaves for the entire tree in a single batched LLM call.
+
+    This was too slow (~142s) because the prompt was too large.
+    Keeping for reference.
 
     Args:
         framework_structure: The framework template with L1 categories and L2 branches
