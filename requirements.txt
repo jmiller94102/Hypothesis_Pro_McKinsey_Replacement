@@ -2,6 +2,7 @@
 
 # Google ADK
 google-adk>=1.19.0
+google-generativeai>=0.8.0
 
 # Testing
 pytest>=9.0.0

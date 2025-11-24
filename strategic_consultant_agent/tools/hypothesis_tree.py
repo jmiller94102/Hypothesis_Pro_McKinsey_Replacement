@@ -3,12 +3,19 @@
 from typing import Dict, List, Optional
 
 from strategic_consultant_agent.tools.framework_loader import load_framework
+from strategic_consultant_agent.tools.llm_tree_generators import (
+    generate_problem_specific_l2_branches,
+    generate_problem_specific_l3_leaves,
+)
 
 
 def generate_hypothesis_tree(
     problem: str,
     framework: str = "scale_decision",
     custom_l1_categories: Optional[List[str]] = None,
+    market_research: Optional[str] = None,
+    competitor_research: Optional[str] = None,
+    use_llm_generation: bool = True,
 ) -> Dict:
     """
     Generate a MECE hypothesis tree for a strategic problem.
@@ -18,6 +25,9 @@ def generate_hypothesis_tree(
         framework: One of [scale_decision, product_launch, market_entry,
                          investment_decision, operations_improvement, custom]
         custom_l1_categories: User-defined L1 categories (only if framework="custom")
+        market_research: Market research context for LLM generation (optional)
+        competitor_research: Competitive analysis context for LLM generation (optional)
+        use_llm_generation: If True, use LLM to generate L2/L3 content (default: True)
 
     Returns:
         dict: Complete hypothesis tree structure with L1, L2, L3 levels
@@ -49,7 +59,7 @@ def generate_hypothesis_tree(
         },
     }
 
-    # Generate L1, L2, L3 structure from template
+    # Generate L1, L2, L3 structure
     l1_categories = template.get("L1_categories", {})
 
     for l1_key, l1_data in l1_categories.items():
@@ -60,26 +70,63 @@ def generate_hypothesis_tree(
             "L2_branches": {},
         }
 
-        # Add L2 branches
-        l2_branches = l1_data.get("L2_branches", {})
-        for l2_key, l2_data in l2_branches.items():
+        # Generate L2 branches
+        if use_llm_generation and (market_research or competitor_research):
+            # Use LLM to generate problem-specific L2 branches
+            l2_branches_dict = generate_problem_specific_l2_branches(
+                l1_category=l1_data.get("label", l1_key),
+                l1_question=l1_data.get("question", ""),
+                l1_description=l1_data.get("description", ""),
+                problem_statement=problem,
+                market_research=market_research,
+                competitor_research=competitor_research,
+                num_branches=3,
+            )
+        else:
+            # Fall back to template L2 branches
+            template_l2 = l1_data.get("L2_branches", {})
+            l2_branches_dict = {
+                key: {"label": data.get("label", key), "question": data.get("question", "")}
+                for key, data in template_l2.items()
+            }
+
+        # Add L2 branches to tree and generate L3 leaves
+        for l2_key, l2_data in l2_branches_dict.items():
             tree["tree"][l1_key]["L2_branches"][l2_key] = {
                 "label": l2_data.get("label", l2_key),
                 "question": l2_data.get("question", ""),
                 "L3_leaves": [],
             }
 
-            # Generate L3 leaves from suggested leaves
-            suggested_l3 = l2_data.get("suggested_L3", [])
-            for i, leaf_label in enumerate(suggested_l3):
-                l3_leaf = _generate_l3_leaf(
-                    label=leaf_label,
-                    l1_context=l1_data.get("label", ""),
-                    l2_context=l2_data.get("label", ""),
-                    problem=problem,
-                    index=i + 1,
+            # Generate L3 leaves
+            if use_llm_generation and (market_research or competitor_research):
+                # Use LLM to generate problem-specific L3 leaves
+                l3_leaves = generate_problem_specific_l3_leaves(
+                    l1_category=l1_data.get("label", l1_key),
+                    l1_question=l1_data.get("question", ""),
+                    l2_branch=l2_data.get("label", l2_key),
+                    l2_question=l2_data.get("question", ""),
+                    problem_statement=problem,
+                    market_research=market_research,
+                    competitor_research=competitor_research,
+                    num_leaves=3,
                 )
-                tree["tree"][l1_key]["L2_branches"][l2_key]["L3_leaves"].append(l3_leaf)
+            else:
+                # Fall back to template-based generation
+                template_l2_data = l1_data.get("L2_branches", {}).get(l2_key, {})
+                suggested_l3 = template_l2_data.get("suggested_L3", [f"{l2_key} Factor 1", f"{l2_key} Factor 2", f"{l2_key} Factor 3"])
+                l3_leaves = [
+                    _generate_l3_leaf(
+                        label=leaf_label,
+                        l1_context=l1_data.get("label", ""),
+                        l2_context=l2_data.get("label", ""),
+                        problem=problem,
+                        index=i + 1,
+                    )
+                    for i, leaf_label in enumerate(suggested_l3)
+                ]
+
+            tree["tree"][l1_key]["L2_branches"][l2_key]["L3_leaves"].extend(l3_leaves)
 
     return tree
 

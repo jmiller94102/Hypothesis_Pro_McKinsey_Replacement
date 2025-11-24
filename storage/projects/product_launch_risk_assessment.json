@@ -1,0 +1,428 @@
+{
+  "problem": "Assess risks for launching AI-powered medical diagnosis assistant in Q2 2025",
+  "framework": "risk_assessment",
+  "framework_name": "Risk Assessment Framework",
+  "description": "For evaluating project/strategic risks with probability-impact analysis",
+  "tree": {
+    "STRATEGIC_RISKS": {
+      "label": "STRATEGIC RISKS",
+      "question": "What strategic risks could derail the initiative?",
+      "description": "Market, competitive, and strategic positioning risks",
+      "L2_branches": {
+        "MARKET_RISKS": {
+          "label": "Market Risks",
+          "question": "What market-related risks exist?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Market Demand Risk",
+              "question": "What is the market demand risk?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate market demand risk against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Competitive Response Risk",
+              "question": "What is the competitive response risk?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate competitive response risk against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Market Timing Risk",
+              "question": "What is the market timing risk?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate market timing risk against target"
+            }
+          ]
+        },
+        "COMPETITIVE_RISKS": {
+          "label": "Competitive Risks",
+          "question": "What competitive threats exist?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Competitive Disruption",
+              "question": "What is the competitive disruption?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Market research, industry reports",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate competitive disruption against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Price War Risk",
+              "question": "What is the price war risk?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate price war risk against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Market Share Loss",
+              "question": "What is the market share loss?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Market research, industry reports",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate market share loss against target"
+            }
+          ]
+        },
+        "STRATEGIC_FIT_RISKS": {
+          "label": "Strategic Fit Risks",
+          "question": "Does this align with strategy?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Portfolio Misalignment",
+              "question": "What is the portfolio misalignment?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Strategic Fit Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate portfolio misalignment against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Capability Gap",
+              "question": "What is the capability gap?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Strategic Fit Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate capability gap against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Brand Inconsistency",
+              "question": "What is the brand inconsistency?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Strategic Fit Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate brand inconsistency against target"
+            }
+          ]
+        }
+      }
+    },
+    "OPERATIONAL_RISKS": {
+      "label": "OPERATIONAL RISKS",
+      "question": "What operational risks could impact execution?",
+      "description": "Execution, resource, and operational capability risks",
+      "L2_branches": {
+        "EXECUTION_RISKS": {
+          "label": "Execution Risks",
+          "question": "What could go wrong during execution?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Timeline Slippage",
+              "question": "What is the timeline slippage?",
+              "metric_type": "quantitative",
+              "target": "<30 days implementation",
+              "data_source": "Execution Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate timeline slippage against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Resource Constraints",
+              "question": "What is the resource constraints?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Execution Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate resource constraints against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Integration Complexity",
+              "question": "What is the integration complexity?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Technical specifications, vendor documentation",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate integration complexity against target"
+            }
+          ]
+        },
+        "TECHNICAL_RISKS": {
+          "label": "Technical Risks",
+          "question": "What technical challenges exist?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Technology Maturity",
+              "question": "What is the technology maturity?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Technical Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate technology maturity against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "System Integration",
+              "question": "What is the system integration?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Technical specifications, vendor documentation",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate system integration against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Scalability Issues",
+              "question": "What is the scalability issues?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Technical Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate scalability issues against target"
+            }
+          ]
+        },
+        "PEOPLE_RISKS": {
+          "label": "People Risks",
+          "question": "What people-related risks exist?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Key Person Risk",
+              "question": "What is the key person risk?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate key person risk against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Change Resistance",
+              "question": "What is the change resistance?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "People Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate change resistance against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Talent Availability",
+              "question": "What is the talent availability?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "People Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate talent availability against target"
+            }
+          ]
+        }
+      }
+    },
+    "EXTERNAL_RISKS": {
+      "label": "EXTERNAL RISKS",
+      "question": "What external factors could impact success?",
+      "description": "Regulatory, financial, and external environment risks",
+      "L2_branches": {
+        "REGULATORY_RISKS": {
+          "label": "Regulatory Risks",
+          "question": "What regulatory risks exist?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Regulatory Approval",
+              "question": "What is the regulatory approval?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate regulatory approval against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Compliance Changes",
+              "question": "What is the compliance changes?",
+              "metric_type": "binary",
+              "target": "Yes / Confirmed",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate compliance changes against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Legal Liability",
+              "question": "What is the legal liability?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate legal liability against target"
+            }
+          ]
+        },
+        "FINANCIAL_RISKS": {
+          "label": "Financial Risks",
+          "question": "What financial risks exist?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Budget Overrun",
+              "question": "What is the budget overrun?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Financial Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate budget overrun against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "ROI Shortfall",
+              "question": "What is the roi shortfall?",
+              "metric_type": "quantitative",
+              "target": "Measurable positive impact",
+              "data_source": "Financial reports, budget analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate roi shortfall against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Funding Availability",
+              "question": "What is the funding availability?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Financial Risks data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate funding availability against target"
+            }
+          ]
+        },
+        "EXTERNAL_ENVIRONMENT_RISKS": {
+          "label": "External Environment",
+          "question": "What external factors could disrupt?",
+          "L3_leaves": [
+            {
+              "id": "L3_001",
+              "label": "Economic Downturn",
+              "question": "What is the economic downturn?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "External Environment data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate economic downturn against target"
+            },
+            {
+              "id": "L3_002",
+              "label": "Supply Chain Disruption",
+              "question": "What is the supply chain disruption?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "External Environment data and analysis",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate supply chain disruption against target"
+            },
+            {
+              "id": "L3_003",
+              "label": "Geopolitical Risk",
+              "question": "What is the geopolitical risk?",
+              "metric_type": "qualitative",
+              "target": "Strong positive assessment from stakeholders",
+              "data_source": "Regulatory documentation, compliance audits",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": [],
+              "assessment_criteria": "Evaluate geopolitical risk against target"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "metadata": {
+    "levels": 3,
+    "mece_validated": false
+  },
+  "risk_scoring": {
+    "probability_scale": {
+      "1": "Very Low (0-10%)",
+      "2": "Low (10-30%)",
+      "3": "Medium (30-50%)",
+      "4": "High (50-70%)",
+      "5": "Very High (70-100%)"
+    },
+    "impact_scale": {
+      "1": "Negligible",
+      "2": "Minor",
+      "3": "Moderate",
+      "4": "Major",
+      "5": "Critical"
+    },
+    "risk_score": "Probability (1-5) \u00d7 Impact (1-5) = Risk Score (1-25)"
+  }
+}

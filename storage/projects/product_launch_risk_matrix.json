@@ -1,0 +1,35 @@
+{
+  "matrix_type": "probability_impact",
+  "total_risks": 0,
+  "quadrants": {
+    "critical": {
+      "label": "CRITICAL (High Probability, High Impact)",
+      "criteria": "Probability \u22654 AND Impact \u22654",
+      "action": "Immediate mitigation required",
+      "risks": [],
+      "count": 0
+    },
+    "high_priority": {
+      "label": "HIGH PRIORITY (Risk Score \u226512)",
+      "criteria": "Probability \u00d7 Impact \u2265 12",
+      "action": "Develop detailed mitigation plans",
+      "risks": [],
+      "count": 0
+    },
+    "monitor": {
+      "label": "MONITOR (Risk Score 6-11)",
+      "criteria": "6 \u2264 Probability \u00d7 Impact < 12",
+      "action": "Monitor and prepare contingencies",
+      "risks": [],
+      "count": 0
+    },
+    "low_priority": {
+      "label": "LOW PRIORITY (Risk Score <6)",
+      "criteria": "Probability \u00d7 Impact < 6",
+      "action": "Accept or monitor passively",
+      "risks": [],
+      "count": 0
+    }
+  },
+  "top_risks": []
+}

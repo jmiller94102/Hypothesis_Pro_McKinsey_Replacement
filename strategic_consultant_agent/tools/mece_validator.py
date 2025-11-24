@@ -92,7 +92,23 @@ def _check_l1_overlaps(tree: Dict) -> List[str]:
         "operational": ["process", "workflow", "capability"],
     }
 
+    # Exception patterns (these are valid L1 structures that may appear to overlap)
+    valid_patterns = {
+        # Standard frameworks
+        ("desirability", "feasibility", "viability"),
+        ("strategic", "operational", "external"),
+        # Hypothesis trees
+        ("hypothesis", "hypothesis", "hypothesis"),  # Multiple hypotheses are valid
+        ("primary", "alternative", "tertiary"),
+    }
+
     l1_keys = list(tree.keys())
+    l1_labels = [tree[key].get("label", key).lower() for key in l1_keys]
+
+    # Check if this matches a valid pattern
+    for pattern in valid_patterns:
+        if all(any(p in label for p in pattern) for label in l1_labels):
+            return []  # No overlaps for recognized valid patterns
 
     for i, l1_key_a in enumerate(l1_keys):
         label_a = tree[l1_key_a].get("label", l1_key_a).lower()
@@ -100,15 +116,16 @@ def _check_l1_overlaps(tree: Dict) -> List[str]:
         for l1_key_b in l1_keys[i + 1 :]:
             label_b = tree[l1_key_b].get("label", l1_key_b).lower()
 
-            # Check if labels share keywords
-            words_a = set(label_a.split())
-            words_b = set(label_b.split())
+            # Check if labels share keywords (but ignore common words)
+            words_a = set(label_a.split()) - {"risk", "risks", "hypothesis", "the", "and", "or"}
+            words_b = set(label_b.split()) - {"risk", "risks", "hypothesis", "the", "and", "or"}
 
-            # Direct keyword match
-            if words_a & words_b:
+            # Direct keyword match (only if substantive overlap)
+            common_words = words_a & words_b
+            if len(common_words) > 1:  # More than one word overlap
                 overlaps.append(
                     f"L1 categories '{tree[l1_key_a]['label']}' and "
-                    f"'{tree[l1_key_b]['label']}' may overlap (shared keywords)"
+                    f"'{tree[l1_key_b]['label']}' may overlap (shared keywords: {common_words})"
                 )
 
             # Semantic overlap check

@@ -33,5 +33,5 @@ def create_strategic_analyzer() -> SequentialAgent:
     )
 
 
-# Export the root agent as the default
-root_agent = create_strategic_analyzer
+# Export the root agent as the default (callable for ADK eval)
+root_agent = create_strategic_analyzer()

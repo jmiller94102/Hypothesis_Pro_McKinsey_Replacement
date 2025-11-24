@@ -1,0 +1,411 @@
+{
+  "problem": "Should we scale the deployment of computer vision fall detection in senior living?",
+  "framework": "scale_decision",
+  "framework_name": "Scale Decision Framework",
+  "description": "For evaluating whether to scale/expand an existing pilot or initiative",
+  "tree": {
+    "DESIRABILITY": {
+      "label": "DESIRABILITY",
+      "question": "Is it worth doing?",
+      "description": "Evaluates whether the solution creates sufficient value to justify scaling",
+      "L2_branches": {
+        "VALUE_PROPOSITION_FINANCIAL": {
+          "label": "Financial Value Proposition",
+          "question": "Does the economic benefit of reduced fall-related costs and potential new revenue streams outweigh the investment and ongoing operational expenses?",
+          "L3_leaves": [
+            {
+              "label": "Reduction in Fall-Related Direct Cost Per Incident",
+              "question": "Does computer vision fall detection system deployment reduce the average direct cost per fall-related incident by at least 20% within 18 months?",
+              "metric_type": "quantitative",
+              "target": ">20% reduction compared to baseline, aiming for a 18-24 month ROI benchmark",
+              "data_source": "Internal accounting records (medical bills, liability claims), facility incident reports, vendor pricing sheets (SafelyYou at $150-200/unit/month)",
+              "assessment_criteria": "Calculate the average cost per fall incident (medical + liability) before and after system implementation. Compare the percentage reduction against the target and assess against the 18-24 month ROI benchmark. Analyze if the reduction is sufficient to offset system costs.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Impact on Staff Response Time and Efficiency",
+              "question": "Does computer vision fall detection system deployment decrease average staff response time to resident falls by at least 30% and improve staff satisfaction to >75% within the first 6 months?",
+              "metric_type": "quantitative",
+              "target": ">30% reduction in response time, >75% staff acceptance rate (benchmark of 70-80%)",
+              "data_source": "Staff call logs, incident report timestamps, post-implementation staff surveys, qualitative feedback on system usability (e.g., Teton.ai real-time alerts)",
+              "assessment_criteria": "Measure the time from fall detection alert to staff arrival at the resident's location before and after system implementation. Correlate this with staff survey data assessing perceived efficiency and satisfaction with the new technology. Assess if the system's real-time alert capabilities (like Teton.ai) are contributing to faster response.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "New Revenue Potential from Enhanced Services",
+              "question": "Can a computer vision fall detection system enable the offering of a premium 'Enhanced Safety' service package, generating at least 5% incremental monthly revenue per unit after 12 months of deployment?",
+              "metric_type": "quantitative",
+              "target": ">5% incremental monthly revenue per unit",
+              "data_source": "Sales data from pilot communities offering premium packages, market analysis of competitor service offerings (e.g., SafelyYou's perceived 'transformative but pricey' offering), pricing models of similar technologies",
+              "assessment_criteria": "Track revenue generated specifically from a premium safety package that includes the fall detection system. Analyze customer adoption rates of this package and its contribution to overall revenue per unit. Compare against the target incremental revenue, considering that SafelyYou and Teton.ai pricing suggest a willingness to pay for advanced safety.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        },
+        "VALUE_PROPOSITION_OPERATIONAL_AND_CLINICAL": {
+          "label": "Operational and Clinical Value Proposition",
+          "question": "Does the technology demonstrably improve resident safety, reduce staff workload, and align with evolving regulatory and quality incentives?",
+          "L3_leaves": [
+            {
+              "label": "Demonstrable Reduction in Fall-Related ER Visits",
+              "question": "Can computer vision fall detection reduce fall-related ER visits by at least 30% within 6 months of deployment?",
+              "metric_type": "quantitative",
+              "target": ">30% reduction in fall-related ER visits (aligned with KLAS 2024 study benchmark and Teton.ai case study at Spring Hills)",
+              "data_source": "Community ER visit logs (pre- and post-deployment), resident incident reports, vendor performance reports",
+              "assessment_criteria": "Track number of ER visits attributed to falls for a cohort of residents with fall detection vs. a control group (or historical data) and compare the percentage reduction against the target.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Quantifiable Decrease in Staff Time Spent on Fall Response",
+              "question": "Does computer vision fall detection reduce direct staff time spent responding to falls by at least 20%?",
+              "metric_type": "quantitative",
+              "target": ">20% reduction in average staff time per fall incident, aiming to align with implicit staff workload reduction benefits noted by SafelyYou customers",
+              "data_source": "Staff time logs (tracking time from alert to resident check-in for falls), direct observation, and anecdotal feedback from nursing staff",
+              "assessment_criteria": "Measure average staff minutes spent on fall response before and after system implementation. Analyze trends to confirm a statistically significant decrease meeting the target.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Resident and Staff Satisfaction with Fall Detection Technology",
+              "question": "Will at least 75% of residents and staff report positive satisfaction with the computer vision fall detection system after 6 months of use?",
+              "metric_type": "qualitative",
+              "target": ">75% positive satisfaction (exceeding the 70-80% staff acceptance rate benchmark reported for deployed systems)",
+              "data_source": "Resident and staff satisfaction surveys, qualitative interviews, feedback forms",
+              "assessment_criteria": "Administer standardized surveys to residents and staff focusing on usability, perceived safety improvements, and overall acceptance. Aggregate positive responses to determine if the 75% threshold is met.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        },
+        "MARKET_READINESS_AND_ADOPTION": {
+          "label": "Market Readiness and Adoption",
+          "question": "Is the market receptive to this technology, and can we effectively implement and integrate it to achieve desired adoption and satisfaction levels?",
+          "L3_leaves": [
+            {
+              "label": "Fall Incident Rate Reduction (Vision-Based)",
+              "question": "Does implementing SafelyYou or Teton.ai's vision-based computer vision system reduce fall incidents by at least 25% within 12 months?",
+              "metric_type": "quantitative",
+              "target": ">25% reduction in reported fall incidents (benchmark from leading vendor incident reduction rates)",
+              "data_source": "Community incident tracking logs (pre/post implementation), SafelyYou and Teton.ai case study data",
+              "assessment_criteria": "Measure the number of reported falls per 1,000 resident-days before and after system deployment. Compare to industry benchmarks for SafelyYou and Teton.ai.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Staff Satisfaction with Real-Time Alerts",
+              "question": "Will staff at pilot facilities report a minimum satisfaction score of 7.5/10 regarding the accuracy and timeliness of real-time fall alerts from a chosen system (e.g., Teton.ai)?",
+              "metric_type": "qualitative",
+              "target": ">7.5/10 satisfaction score (benchmark of 70-80% positive staff acceptance)",
+              "data_source": "Post-implementation staff surveys, direct feedback sessions with care staff, Teton.ai real-time alert efficacy",
+              "assessment_criteria": "Administer structured surveys and conduct qualitative interviews with nursing and care staff in pilot facilities after 6 months of use. Analyze survey scores and thematic feedback on alert system performance.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "EHR Integration Success Rate",
+              "question": "Can we achieve a seamless HL7 integration for fall event data into existing EHR systems for at least 95% of pilot facilities within the standard 2-4 week installation timeframe?",
+              "metric_type": "binary",
+              "target": ">95% successful HL7 integration (benchmark of 2-4 week installation time)",
+              "data_source": "IT deployment logs, EHR system reports, integration testing results, vendor implementation reports",
+              "assessment_criteria": "Track the successful establishment of HL7 data feeds for fall events from the computer vision system to the facility's EHR. Measure the time taken for successful integration and identify any critical failures or significant delays beyond the benchmark.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        }
+      }
+    },
+    "FEASIBILITY": {
+      "label": "FEASIBILITY",
+      "question": "Can we actually do it?",
+      "description": "Evaluates organizational capability to implement at scale",
+      "L2_branches": {
+        "TECHNOLOGICAL_READINESS": {
+          "label": "Technological Readiness",
+          "question": "Is our existing infrastructure and technical expertise sufficient to deploy and manage computer vision fall detection at scale?",
+          "L3_leaves": [
+            {
+              "label": "Infrastructure Readiness for Real-time Vision Processing",
+              "question": "Can our existing network bandwidth and server capacity support real-time video processing for computer vision fall detection across 500 facilities (SafelyYou's current scale) without performance degradation below 90% accuracy?",
+              "metric_type": "quantitative",
+              "target": ">90% processing accuracy and <500ms alert latency per facility, benchmarked against SafelyYou's operational requirements and Teton.ai's real-time alert capabilities.",
+              "data_source": "Internal network traffic logs, server utilization metrics, pilot deployment performance data, vendor technical specifications.",
+              "assessment_criteria": "Measure end-to-end latency from fall event detection to alert generation, monitor CPU/GPU utilization on edge devices and central servers, correlate with video stream quality and processing success rates during peak hours across a representative sample of facilities.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Technical Expertise for Scaled Deployment and Management",
+              "question": "Can our IT team successfully deploy and manage computer vision fall detection systems in 50 facilities within 6 months, achieving <10% critical incident escalations related to system configuration or integration?",
+              "metric_type": "quantitative",
+              "target": "<10% critical escalations per 50 facilities within 6 months, informed by the 2-4 week installation time per facility for vendors like SafelyYou and Teton.ai, and aiming for staff acceptance rates of 70-80%.",
+              "data_source": "IT support ticket logs, incident reports categorized by root cause (system failure, configuration error, integration issue), project deployment timelines, post-deployment staff surveys.",
+              "assessment_criteria": "Track the number of support tickets requiring expert intervention beyond Tier 1 support, categorize ticket types, measure resolution times for configuration and integration issues, and correlate with the number of facilities onboarded.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Data Integration and Security Compliance",
+              "question": "Can we integrate the computer vision fall detection system with at least 80% of target facilities' existing EHR systems using HL7 standards, while maintaining HIPAA compliance and achieving <1% data breach incidents?",
+              "metric_type": "quantitative",
+              "target": ">80% successful HL7 integrations with EHRs and <1% HIPAA-related data incidents, benchmarked against industry standards for data integration challenges and the common requirement for EHR integration by leading vendors like SafelyYou.",
+              "data_source": "EHR integration logs, security audit reports, HIPAA compliance reviews, incident reports related to data privacy or breaches, vendor integration documentation.",
+              "assessment_criteria": "Quantify the success rate of HL7 message exchanges, monitor for data transmission errors, conduct regular security audits to identify vulnerabilities, and track any reported or suspected data breaches or privacy violations.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        },
+        "OPERATIONAL_SCALABILITY": {
+          "label": "Operational Scalability",
+          "question": "Can we effectively integrate the technology into existing operational workflows and staff processes across multiple facilities for large-scale deployment?",
+          "L3_leaves": [
+            {
+              "label": "Staff Workflow Integration Efficiency",
+              "question": "Can we integrate computer vision fall detection alerts into existing staff alert systems (e.g., pagers, nurse call buttons) at 95% of deployed facilities within the first month of rollout, mirroring the 2-4 week installation time for vendors like SafelyYou and Teton.ai?",
+              "metric_type": "quantitative",
+              "target": "95% of facilities successfully integrated within 4 weeks of technology deployment, with an average alert delivery time of <30 seconds.",
+              "data_source": "Facility IT logs, staff feedback surveys, alert system uptime reports, vendor implementation documentation.",
+              "assessment_criteria": "Measure the percentage of facilities where the integrated alert system is functional and delivering timely alerts. Track alert response times and staff feedback on the usability of the integrated system.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Staff Acceptance and Adoption Rate",
+              "question": "Will at least 75% of frontline staff at newly deployed facilities report positive sentiment and feel the computer vision fall detection system enhances their ability to respond to falls within the first 6 months, exceeding the typical 70-80% benchmark?",
+              "metric_type": "qualitative",
+              "target": "Minimum 75% positive staff sentiment towards the system, measured by Likert scale survey responses and qualitative interview feedback.",
+              "data_source": "Anonymous staff surveys administered at 3, 6, and 12 months post-deployment; qualitative interviews with a representative sample of staff.",
+              "assessment_criteria": "Analyze survey data for average sentiment scores and identify common themes in qualitative feedback. Compare results against the 70-80% industry benchmark.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Fall Incident Response Time Improvement",
+              "question": "Can computer vision fall detection systems, particularly those with real-time alerts like Teton.ai, reduce the average time from fall incident to staff notification by at least 50% compared to current manual reporting methods, ultimately contributing to a 30-40% reduction in fall-related ER visits as seen in KLAS 2024 studies?",
+              "metric_type": "quantitative",
+              "target": "A 50% reduction in average time from fall to staff notification, aiming for a secondary outcome of a 30-40% decrease in fall-related ER visits.",
+              "data_source": "Pre- and post-implementation incident reports, staff response logs, ER visit data from participating facilities, and case studies of vendors like Teton.ai.",
+              "assessment_criteria": "Calculate the average time from fall to initial staff notification before and after implementing the computer vision system. Correlate this improvement with changes in fall-related ER visit rates, referencing KLAS benchmarks.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        },
+        "FINANCIAL_VIABILITY_AT_SCALE": {
+          "label": "Financial Viability at Scale",
+          "question": "Can we secure and manage the necessary capital investment and achieve profitable unit economics when deploying computer vision fall detection across a significant portion of our portfolio?",
+          "L3_leaves": [
+            {
+              "label": "Achieving 20% Reduction in Fall-Related ER Visits within 18 Months",
+              "question": "Can deploying SafelyYou's computer vision fall detection system result in a 20% reduction in fall-related ER visits within 18 months of full portfolio rollout?",
+              "metric_type": "quantitative",
+              "target": ">20% reduction in fall-related ER visits, benchmarked against KLAS 2024 study's 30-40% reduction range, and aligning with SafelyYou's reported ROI timeline of 18-24 months",
+              "data_source": "ER visit logs, incident reports, and financial records from deployed facilities, validated against SafelyYou's case studies and KLAS 2024 data",
+              "assessment_criteria": "Track fall-related ER visit volume pre- and post-deployment at a sample of 25% of portfolio units, over an 18-month period. Calculate percentage change and compare to the target. Analyze trends in incident severity.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Unit Economics: Achieving < $150/Unit/Month Total Cost of Ownership",
+              "question": "Can we achieve a total cost of ownership (TCO) for computer vision fall detection systems, including hardware, software licenses, installation, and ongoing support, that is less than $150 per resident unit per month, considering a portfolio-wide deployment?",
+              "metric_type": "quantitative",
+              "target": "< $150/unit/month TCO, benchmarked against Teton.ai's pricing range of $120-150/unit/month",
+              "data_source": "Vendor quotes (SafelyYou, Teton.ai, Vayyar), internal IT and facilities maintenance costs, deployment partner fees, software subscription renewals",
+              "assessment_criteria": "Model the TCO for a 50% portfolio deployment, factoring in initial CapEx amortization over 5 years and OpEx. Sum the per-unit costs and compare to the target. Adjust vendor pricing based on volume discounts and potential negotiation.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Staff Acceptance Rate Exceeding 75% within 6 Months of Pilot",
+              "question": "Will the implementation of a computer vision fall detection system, specifically integrated with Vayyar's privacy-focused approach if selected, achieve a staff acceptance rate exceeding 75% within the first 6 months of a pilot program across 5 diverse communities?",
+              "metric_type": "quantitative",
+              "target": ">75% positive staff acceptance rate, benchmarked against the industry benchmark of 70-80% positive acceptance in the first 6 months",
+              "data_source": "Anonymous staff surveys, feedback forms from caregivers and clinical staff, direct interviews with community managers",
+              "assessment_criteria": "Conduct pre-implementation baseline surveys to gauge current attitudes. Administer post-implementation surveys at 3 and 6 months for pilot communities. Categorize responses as positive, neutral, or negative, and calculate the percentage of positive responses. Analyze qualitative feedback for recurring themes.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        }
+      }
+    },
+    "VIABILITY": {
+      "label": "VIABILITY",
+      "question": "Will it work long-term?",
+      "description": "Evaluates sustainability, scalability, and risk of the solution",
+      "L2_branches": {
+        "TECHNOLOGICAL_MATURITY_AND_RELIABILITY": {
+          "label": "Technological Maturity and Reliability",
+          "question": "How accurate, reliable, and future-proof is the computer vision technology for long-term deployment, considering potential technical obsolescence or performance degradation?",
+          "L3_leaves": [
+            {
+              "label": "Computer Vision Accuracy in Diverse Senior Living Environments",
+              "question": "Can the chosen computer vision technology maintain >=92% accuracy in detecting falls across diverse lighting conditions and resident mobility levels, aligning with Vayyar's reported lower accuracy benchmark?",
+              "metric_type": "quantitative",
+              "target": ">=92% detection accuracy (benchmarked against Vayyar's 85% and SafelyYou/Teton.ai's implied higher accuracy)",
+              "data_source": "Pilot study video analysis logs, independent validation by blinded observers, vendor accuracy reports.",
+              "assessment_criteria": "Track true positives, true negatives, false positives, and false negatives in a controlled pilot deployment. Analyze performance variations by time of day, room type, and resident acuity. Compare against Vayyar's stated accuracy.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Long-Term System Reliability and Uptime",
+              "question": "Will the deployed computer vision system achieve >=99.5% uptime and exhibit no significant performance degradation over 12 months, meeting industry support SLAs?",
+              "metric_type": "quantitative",
+              "target": ">=99.5% uptime (standard support SLA)",
+              "data_source": "System logs from deployed facilities, vendor uptime reports, IT infrastructure monitoring tools.",
+              "assessment_criteria": "Continuously monitor system availability and operational status for the duration of the pilot. Track any unscheduled downtime events and their root causes. Assess if the system's performance (e.g., processing speed, alert latency) remains consistent over the test period.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "EHR Integration Success for Real-time Alerts",
+              "question": "Can the computer vision system successfully integrate with existing EHR systems using HL7 standards, enabling real-time fall alert notifications with less than a 5-minute delay?",
+              "metric_type": "quantitative",
+              "target": "<5 minute alert delay post-fall detection, successful HL7 integration (implied by SafelyYou's strength)",
+              "data_source": "EHR system logs, IT integration test reports, incident response time tracking.",
+              "assessment_criteria": "Measure the time lag between a confirmed fall event and the reception of an alert within the EHR system for staff. Verify that HL7 messages are correctly formatted and transmitted, and that the integration is stable through repeated testing and live operation.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        },
+        "ECONOMIC_SUSTAINABILITY_AND_SCALABILITY": {
+          "label": "Economic Sustainability and Scalability",
+          "question": "Can the solution be deployed and maintained cost-effectively across a large number of senior living units, ensuring a positive and sustained ROI, and can the business model support expansion?",
+          "L3_leaves": [
+            {
+              "label": "Economic Sustainability through Reduced Fall-Related Costs",
+              "question": "Can implementing computer vision fall detection achieve a payback period of <24 months by reducing fall-related costs, given an average cost of $35,000/incident?",
+              "metric_type": "quantitative",
+              "target": "< 24 months payback period (Industry benchmark: 18-24 months), with a minimum 15% reduction in annualized fall-related incident costs per unit.",
+              "data_source": "Pilot study financial data (deployment, maintenance costs) compared against historical fall-related medical and liability costs, vendor pricing ($100-200/unit/month).",
+              "assessment_criteria": "Calculate the total cost of ownership (installation, hardware, software, support) over 3 years and divide by the projected savings from reduced fall-related costs. Compare this payback period to the industry benchmark and the target.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Scalability through Efficient Deployment and Support",
+              "question": "Can computer vision fall detection systems be deployed across 200 units within 2 months with a support uptime of >=99.5%, similar to market leaders?",
+              "metric_type": "quantitative",
+              "target": "Deployment time < 2 months for a 200-unit community (Benchmark: 2-4 weeks per facility, scaled across 200 units), with assured support SLAs of 99.5% uptime (Industry standard).",
+              "data_source": "Project management timelines from pilot deployments, vendor support logs and uptime reports.",
+              "assessment_criteria": "Track the actual time taken from contract signing to full operational status for each community in the pilot phase. Monitor system uptime and support response times against the specified SLA.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Staff Acceptance and Operational Impact",
+              "question": "Will staff report a positive acceptance rate of >=75% after 6 months, indicating effective integration into workflows and minimal disruption, and can we achieve a detection accuracy of >=90%?",
+              "metric_type": "qualitative",
+              "target": "Staff acceptance rate of >=75% (Industry benchmark: 70-80% positive in first 6 months) and a detection accuracy of >=90% (Benchmark: Vayyar at 85%, vision-based systems up to 92%).",
+              "data_source": "Staff surveys, feedback forms, and observational studies during pilot deployments. System performance logs for fall detection accuracy.",
+              "assessment_criteria": "Administer structured surveys to staff at 3 and 6-month intervals post-deployment. Analyze system logs to measure true positive and false positive rates for fall detection events, comparing against vendor claims and industry benchmarks.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        },
+        "REGULATORY_AND_OPERATIONAL_RISK_MITIGATION": {
+          "label": "Regulatory and Operational Risk Mitigation",
+          "question": "What are the long-term risks associated with data privacy, cybersecurity, integration complexity, and evolving regulatory compliance that could impact deployment and operation?",
+          "L3_leaves": [
+            {
+              "label": "Data Privacy Compliance Risk Assessment",
+              "question": "Can we achieve <5% data breach incidents and <1% regulatory non-compliance fines within the first 24 months of deployment, aligning with industry best practices and competitive vendor SLAs?",
+              "metric_type": "quantitative",
+              "target": "<5% data breach incidents, <1% regulatory non-compliance fines (based on estimated 99.5% uptime SLAs and general cybersecurity risk mitigation targets)",
+              "data_source": "Internal security audits, incident logs, legal counsel review, vendor security documentation (e.g., Vayyar's privacy-focused approach)",
+              "assessment_criteria": "Track the number of reported data breaches and cybersecurity incidents related to the computer vision system. Monitor for any regulatory fines or warnings. Compare against internal risk tolerance and benchmark competitor security compliance claims.",
+              "id": "L3_001",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "EHR Integration Complexity and Staff Workflow Efficiency",
+              "question": "Can we achieve a 90% successful HL7 integration with existing EHR systems within the initial 3-month pilot, and maintain a staff acceptance rate of >75% for the new workflow?",
+              "metric_type": "quantitative",
+              "target": "90% HL7 integration success rate, >75% staff acceptance (benchmarked against typical 70-80% staff acceptance rates and competitor strengths like SafelyYou's EHR integration)",
+              "data_source": "EHR integration logs, IT project completion reports, staff surveys, direct observation of workflow",
+              "assessment_criteria": "Measure the time and resources required for successful EHR integration for a pilot group of facilities. Quantify the percentage of staff who report positive or neutral experiences with the new system and workflows via surveys and feedback sessions.",
+              "id": "L3_002",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            },
+            {
+              "label": "Long-Term System Uptime and Performance",
+              "question": "Can the computer vision system maintain an average uptime of at least 99.5% and a fall detection accuracy of >90% across all deployed units over a 3-year period?",
+              "metric_type": "quantitative",
+              "target": ">=99.5% uptime, >=90% fall detection accuracy (aligned with typical support SLAs and competitor accuracy benchmarks like Teton.ai's best-in-class AI vs. Vayyar's 85%)",
+              "data_source": "System monitoring logs, incident reports, accuracy validation reports (comparing system alerts to actual fall events), vendor performance reports",
+              "assessment_criteria": "Continuously monitor system uptime and compare it against the target. Periodically validate the accuracy of fall detection through blind testing and review of incident reports where the system missed a fall or falsely alerted. Track performance over time to identify degradation.",
+              "id": "L3_003",
+              "status": "UNTESTED",
+              "confidence": null,
+              "components": []
+            }
+          ]
+        }
+      }
+    }
+  },
+  "metadata": {
+    "levels": 3,
+    "mece_validated": false
+  }
+}

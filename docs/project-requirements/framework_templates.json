@@ -370,6 +370,152 @@
         }
       }
     },
+    "hypothesis_issue_tree": {
+      "name": "Hypothesis-Driven Issue Tree",
+      "description": "For root cause analysis and hypothesis-driven problem solving (McKinsey issue tree style)",
+      "trigger_phrases": ["why is", "root cause", "decline", "underperformance", "what caused", "why did"],
+      "L1_categories": {
+        "HYPOTHESIS_1": {
+          "label": "Primary Hypothesis",
+          "question": "What is the most likely root cause?",
+          "description": "Main hypothesis to explain the observed problem",
+          "L2_branches": {
+            "EVIDENCE_FOR": {
+              "label": "Supporting Evidence",
+              "question": "What evidence supports this hypothesis?",
+              "suggested_L3": ["Data Point 1", "Data Point 2", "Data Point 3"]
+            },
+            "EVIDENCE_AGAINST": {
+              "label": "Contradicting Evidence",
+              "question": "What evidence contradicts this hypothesis?",
+              "suggested_L3": ["Counter-Evidence 1", "Counter-Evidence 2", "Counter-Evidence 3"]
+            },
+            "SUB_DRIVERS": {
+              "label": "Sub-Drivers",
+              "question": "What are the underlying drivers?",
+              "suggested_L3": ["Driver 1", "Driver 2", "Driver 3"]
+            }
+          }
+        },
+        "HYPOTHESIS_2": {
+          "label": "Alternative Hypothesis",
+          "question": "What is an alternative explanation?",
+          "description": "Secondary hypothesis to consider",
+          "L2_branches": {
+            "EVIDENCE_FOR": {
+              "label": "Supporting Evidence",
+              "question": "What evidence supports this hypothesis?",
+              "suggested_L3": ["Data Point 1", "Data Point 2", "Data Point 3"]
+            },
+            "EVIDENCE_AGAINST": {
+              "label": "Contradicting Evidence",
+              "question": "What evidence contradicts this hypothesis?",
+              "suggested_L3": ["Counter-Evidence 1", "Counter-Evidence 2", "Counter-Evidence 3"]
+            },
+            "SUB_DRIVERS": {
+              "label": "Sub-Drivers",
+              "question": "What are the underlying drivers?",
+              "suggested_L3": ["Driver 1", "Driver 2", "Driver 3"]
+            }
+          }
+        },
+        "HYPOTHESIS_3": {
+          "label": "Tertiary Hypothesis",
+          "question": "What other factors could contribute?",
+          "description": "Additional hypotheses to explore",
+          "L2_branches": {
+            "EVIDENCE_FOR": {
+              "label": "Supporting Evidence",
+              "question": "What evidence supports this hypothesis?",
+              "suggested_L3": ["Data Point 1", "Data Point 2", "Data Point 3"]
+            },
+            "EVIDENCE_AGAINST": {
+              "label": "Contradicting Evidence",
+              "question": "What evidence contradicts this hypothesis?",
+              "suggested_L3": ["Counter-Evidence 1", "Counter-Evidence 2", "Counter-Evidence 3"]
+            },
+            "SUB_DRIVERS": {
+              "label": "Sub-Drivers",
+              "question": "What are the underlying drivers?",
+              "suggested_L3": ["Driver 1", "Driver 2", "Driver 3"]
+            }
+          }
+        }
+      }
+    },
+    "risk_assessment": {
+      "name": "Risk Assessment Framework",
+      "description": "For evaluating project/strategic risks with probability-impact analysis",
+      "trigger_phrases": ["risks", "what could go wrong", "failure modes", "risk assessment", "mitigation"],
+      "L1_categories": {
+        "STRATEGIC_RISKS": {
+          "label": "STRATEGIC RISKS",
+          "question": "What strategic risks could derail the initiative?",
+          "description": "Market, competitive, and strategic positioning risks",
+          "L2_branches": {
+            "MARKET_RISKS": {
+              "label": "Market Risks",
+              "question": "What market-related risks exist?",
+              "suggested_L3": ["Market Demand Risk", "Competitive Response Risk", "Market Timing Risk"]
+            },
+            "COMPETITIVE_RISKS": {
+              "label": "Competitive Risks",
+              "question": "What competitive threats exist?",
+              "suggested_L3": ["Competitive Disruption", "Price War Risk", "Market Share Loss"]
+            },
+            "STRATEGIC_FIT_RISKS": {
+              "label": "Strategic Fit Risks",
+              "question": "Does this align with strategy?",
+              "suggested_L3": ["Portfolio Misalignment", "Capability Gap", "Brand Inconsistency"]
+            }
+          }
+        },
+        "OPERATIONAL_RISKS": {
+          "label": "OPERATIONAL RISKS",
+          "question": "What operational risks could impact execution?",
+          "description": "Execution, resource, and operational capability risks",
+          "L2_branches": {
+            "EXECUTION_RISKS": {
+              "label": "Execution Risks",
+              "question": "What could go wrong during execution?",
+              "suggested_L3": ["Timeline Slippage", "Resource Constraints", "Integration Complexity"]
+            },
+            "TECHNICAL_RISKS": {
+              "label": "Technical Risks",
+              "question": "What technical challenges exist?",
+              "suggested_L3": ["Technology Maturity", "System Integration", "Scalability Issues"]
+            },
+            "PEOPLE_RISKS": {
+              "label": "People Risks",
+              "question": "What people-related risks exist?",
+              "suggested_L3": ["Key Person Risk", "Change Resistance", "Talent Availability"]
+            }
+          }
+        },
+        "EXTERNAL_RISKS": {
+          "label": "EXTERNAL RISKS",
+          "question": "What external factors could impact success?",
+          "description": "Regulatory, financial, and external environment risks",
+          "L2_branches": {
+            "REGULATORY_RISKS": {
+              "label": "Regulatory Risks",
+              "question": "What regulatory risks exist?",
+              "suggested_L3": ["Regulatory Approval", "Compliance Changes", "Legal Liability"]
+            },
+            "FINANCIAL_RISKS": {
+              "label": "Financial Risks",
+              "question": "What financial risks exist?",
+              "suggested_L3": ["Budget Overrun", "ROI Shortfall", "Funding Availability"]
+            },
+            "EXTERNAL_ENVIRONMENT_RISKS": {
+              "label": "External Environment",
+              "question": "What external factors could disrupt?",
+              "suggested_L3": ["Economic Downturn", "Supply Chain Disruption", "Geopolitical Risk"]
+            }
+          }
+        }
+      }
+    },
     "custom": {
       "name": "Custom Framework",
       "description": "User-defined framework with custom L1 categories",
