@@ -45,6 +45,7 @@ def run_agent_sync(agent: Agent, input_text: str) -> str:
     Consumes the async generator from run_live() and returns the final text output.
     """
     async def run():
+        # Pass string directly - ADK accepts both string and SessionInput
         events = agent.run_live(input_text)
         final_output = ""
 
@@ -502,33 +503,22 @@ async def update_node(request: UpdateNodeRequest):
 async def save_tree(request: SaveRequest):
     """Save tree with revision control (versioned JSON)."""
     try:
-        # Get latest version number
-        project_dir = Path(f"storage/projects/{request.project_name}")
-        project_dir.mkdir(parents=True, exist_ok=True)
+        # Add description to tree content if provided
+        tree_content = request.tree.copy() if isinstance(request.tree, dict) else request.tree
+        if request.description and isinstance(tree_content, dict):
+            tree_content["description"] = request.description
 
-        existing_versions = list(project_dir.glob("hypothesis_tree_v*.json"))
-        next_version = len(existing_versions) + 1
-
-        filepath = project_dir / f"hypothesis_tree_v{next_version}.json"
-
-        # Save with metadata
-        save_data = {
-            "metadata": {
-                "project_name": request.project_name,
-                "version": next_version,
-                "timestamp": datetime.now().isoformat(),
-                "description": request.description or f"Version {next_version}"
-            },
-            "content": request.tree
-        }
-
-        with open(filepath, 'w', encoding='utf-8') as f:
-            json.dump(save_data, f, indent=2)
+        # Use centralized save_analysis function for consistent sanitization
+        result = save_analysis(
+            project_name=request.project_name,
+            analysis_type="hypothesis_tree",
+            content=tree_content
+        )
 
         return {
-            "filepath": str(filepath),
-            "version": next_version,
-            "timestamp": save_data["metadata"]["timestamp"],
+            "filepath": str(result["filepath"]),
+            "version": result["metadata"]["version"],
+            "timestamp": result["metadata"]["timestamp"],
             "status": "success"
         }
     except Exception as e:
@@ -539,31 +529,19 @@ async def save_tree(request: SaveRequest):
 async def load_tree(project_name: str, version: Optional[int] = None):
     """Load tree (latest version or specific version)."""
     try:
-        project_dir = Path(f"storage/projects/{project_name}")
-
-        if not project_dir.exists():
-            raise HTTPException(status_code=404, detail="Project not found")
-
-        if version:
-            filepath = project_dir / f"hypothesis_tree_v{version}.json"
-            if not filepath.exists():
-                raise HTTPException(status_code=404, detail=f"Version {version} not found")
-        else:
-            # Load latest
-            versions = sorted(project_dir.glob("hypothesis_tree_v*.json"))
-            if not versions:
-                raise HTTPException(status_code=404, detail="No versions found")
-            filepath = versions[-1]
-
-        with open(filepath, encoding='utf-8') as f:
-            data = json.load(f)
+        # Use centralized load_analysis function for consistent sanitization
+        result = load_analysis(
+            project_name=project_name,
+            analysis_type="hypothesis_tree",
+            version=version
+        )
 
         return {
-            "data": data,
+            "data": result,
             "status": "success"
         }
-    except HTTPException:
-        raise
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -572,13 +550,19 @@ async def load_tree(project_name: str, version: Optional[int] = None):
 async def list_versions(project_name: str):
     """List all saved versions of a project."""
     try:
-        project_dir = Path(f"storage/projects/{project_name}")
+        # Use sanitized filename to find correct project directory
+        from strategic_consultant_agent.tools.persistence import _sanitize_filename
+
+        sanitized_name = _sanitize_filename(project_name)
+        project_dir = Path(f"storage/projects/{sanitized_name}")
 
         if not project_dir.exists():
             return {"versions": [], "status": "success"}
 
+        # Find all hypothesis_tree versions
         versions = []
-        for file in sorted(project_dir.glob("hypothesis_tree_v*.json")):
+        for file in sorted(project_dir.glob("hypothesis_tree_v*.json"),
+                          key=lambda p: int(p.stem.split("_v")[1])):
             with open(file, encoding='utf-8') as f:
                 data = json.load(f)
                 versions.append({

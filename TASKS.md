@@ -22,6 +22,17 @@
 - **Status**: Production-ready for Kaggle submission
 
 ### Recently Completed (2025-11-23 - Session 4)
+- **STORAGE CONSOLIDATION FIX ✓** - Critical Bug Resolution
+  - **Issue**: Research and hypothesis trees stored in separate directories
+  - **Root Cause**: `/api/tree/save` bypassed centralized `save_analysis()` sanitization
+  - **Solution**: Refactored 3 endpoints to use centralized persistence functions
+    - `/api/tree/save` - Now uses `save_analysis()` for consistent sanitization
+    - `/api/tree/load` - Now uses `load_analysis()` for correct directory lookup
+    - `/api/tree/versions` - Now uses `_sanitize_filename()` for path resolution
+  - **Result**: Research and trees guaranteed in same directory
+  - **Validation**: Confirmed both `research_v1.json` and `hypothesis_tree_v1.json` in `should_we_invest_in_ai_meeting_notetaker/`
+  - **Benefit**: Reliable research context retrieval for tree improvements
+
 - **FRONTEND UX ENHANCEMENTS ✓** - Real-Time Progress Tracking
   - Implemented Server-Sent Events (SSE) streaming endpoint in FastAPI
   - Added EventSource progress indicator in Next.js UI
@@ -42,6 +53,8 @@
   - **Model Update**: gemini-1.5-flash → gemini-2.5-flash (deprecated model fix)
 
 - **BUG FIXES ✓**
+  - Fixed research agent failure: Removed SessionInput import attempt, pass string directly to `agent.run_live()`
+  - Fixed wrong tree content: AI notetaker generating clinical labels instead of sales-focused content
   - Fixed SSE endpoint to use GET instead of POST (EventSource requirement)
   - Fixed FastAPI backend restart issue (404 errors resolved)
   - Fixed L2 key mismatch causing fallback to sequential generation
@@ -661,7 +674,7 @@ adk eval strategic_consultant_agent evaluation/strategic_consultant.evalset.json
 **Next Session**: Frontend UX improvements and performance optimization
 
 ### Session 4 - 2025-11-23
-**Focus**: Frontend UX improvements and LLM call optimization
+**Focus**: Frontend UX improvements, LLM optimization, and storage consolidation
 **Completed**:
 - **SSE Progress Tracking**:
   - Implemented Server-Sent Events streaming endpoint in FastAPI
@@ -676,12 +689,23 @@ adk eval strategic_consultant_agent evaluation/strategic_consultant.evalset.json
   - Batched L3 generation by L1 category (3 calls instead of 9 sequential)
   - Always use template L2 keys to prevent key mismatch
   - Fixed label cleanup to achieve 3-6 word labels per user feedback
+- **Storage Consolidation Fix**:
+  - Fixed critical bug: Research and hypothesis trees were in separate directories
+  - Root cause: `/api/tree/save` bypassed centralized `save_analysis()` sanitization
+  - Refactored 3 endpoints to use centralized persistence functions:
+    - `/api/tree/save` - Uses `save_analysis()` for consistent sanitization
+    - `/api/tree/load` - Uses `load_analysis()` for correct directory lookup
+    - `/api/tree/versions` - Uses `_sanitize_filename()` for path resolution
+  - Guaranteed research context availability for tree improvements
+  - Validated: Both `research_v1.json` and `hypothesis_tree_v1.json` now in same directory
 - **Bug Fixes**:
+  - Fixed research agent failure: Removed SessionInput import, pass string to `agent.run_live()`
+  - Fixed wrong tree content: AI notetaker tree was generating clinical/healthcare labels
   - Fixed SSE endpoint to use GET (EventSource requirement)
   - Fixed FastAPI backend restart issue (404 errors)
   - Fixed L2 key mismatch causing fallback to sequential generation
   - Updated deprecated gemini-1.5-flash to gemini-2.5-flash
-**Quality Metrics**: 6 commits, 78% performance improvement, real-time progress tracking working
+**Quality Metrics**: 7 commits, 78% performance improvement, storage consolidated, research context working
 **Next Session**: User testing of optimized frontend, potential ADK evaluation run
 
 ---
