@@ -83,25 +83,14 @@ def generate_hypothesis_tree(
             "L2_branches": {},
         }
 
-        # Generate L2 branches
-        if use_llm_generation and (market_research or competitor_research):
-            # Use LLM to generate problem-specific L2 branches
-            l2_branches_dict = generate_problem_specific_l2_branches(
-                l1_category=l1_data.get("label", l1_key),
-                l1_question=l1_data.get("question", ""),
-                l1_description=l1_data.get("description", ""),
-                problem_statement=problem,
-                market_research=market_research,
-                competitor_research=competitor_research,
-                num_branches=3,
-            )
-        else:
-            # Fall back to template L2 branches
-            template_l2 = l1_data.get("L2_branches", {})
-            l2_branches_dict = {
-                key: {"label": data.get("label", key), "question": data.get("question", "")}
-                for key, data in template_l2.items()
-            }
+        # OPTIMIZATION: Always use template L2 branches to ensure key consistency
+        # This prevents L2 key mismatches with L3 batch generation
+        # The L3 leaves will be problem-specific and rich, which is what matters most
+        template_l2 = l1_data.get("L2_branches", {})
+        l2_branches_dict = {
+            key: {"label": data.get("label", key), "question": data.get("question", "")}
+            for key, data in template_l2.items()
+        }
 
         # Add L2 branches to tree and attach L3 leaves
         for l2_key, l2_data in l2_branches_dict.items():
