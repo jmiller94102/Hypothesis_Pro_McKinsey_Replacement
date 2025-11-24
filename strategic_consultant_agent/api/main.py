@@ -16,7 +16,8 @@ import asyncio
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
 from strategic_consultant_agent.tools.framework_loader import FrameworkLoader
-from strategic_consultant_agent.tools.persistence import save_analysis, load_analysis
+from strategic_consultant_agent.tools.persistence import save_analysis, load_analysis, _sanitize_filename
+import re
 
 # Import for Google Search research
 import os
@@ -26,6 +27,23 @@ from google.adk.models.google_llm import Gemini
 from google.adk.tools import google_search
 
 app = FastAPI(title="HypothesisTree Pro API", version="1.0.0")
+
+
+def sanitize_project_name_for_frontend(problem: str) -> str:
+    """
+    Sanitize project name to match frontend logic.
+    Frontend: problem.toLowerCase().replace(/[^a-z0-9]+/g, '_').substring(0, 50)
+    """
+    # Convert to lowercase
+    sanitized = problem.lower()
+    # Replace non-alphanumeric with underscores
+    sanitized = re.sub(r'[^a-z0-9]+', '_', sanitized)
+    # Trim to 50 characters
+    sanitized = sanitized[:50]
+    # Remove trailing underscore if present
+    sanitized = sanitized.rstrip('_')
+    return sanitized
+
 
 # CORS middleware for Next.js frontend
 app.add_middleware(
@@ -201,6 +219,9 @@ async def generate_tree_stream(problem: str, framework: str):
     async def event_generator() -> AsyncGenerator[str, None]:
         """Generate SSE events for progress updates."""
         try:
+            # Sanitize project name to match frontend (ensures same folder)
+            sanitized_project_name = sanitize_project_name_for_frontend(problem)
+
             # Helper to send progress event
             def send_progress(stage: str, message: str, progress: int):
                 event_data = {
@@ -221,7 +242,7 @@ async def generate_tree_stream(problem: str, framework: str):
 
             try:
                 research_data = load_analysis(
-                    project_name=problem,
+                    project_name=sanitized_project_name,
                     analysis_type="research"
                 )
                 market_research = research_data["content"].get("market_research", "")
@@ -250,7 +271,7 @@ async def generate_tree_stream(problem: str, framework: str):
                 # Stage 3: Save research cache
                 yield send_progress("save_cache", "Saving research cache...", 60)
                 save_analysis(
-                    project_name=problem,
+                    project_name=sanitized_project_name,
                     analysis_type="research",
                     content={
                         "market_research": market_research,
@@ -342,15 +363,16 @@ async def generate_tree(request: TreeGenerateRequest):
                 competitor_research = f"Competitor research unavailable: {str(e)}"
 
             # Save research to disk for future use (persists across restarts)
+            sanitized_name = sanitize_project_name_for_frontend(request.problem)
             save_analysis(
-                project_name=request.problem,
+                project_name=sanitized_name,
                 analysis_type="research",
                 content={
                     "market_research": market_research,
                     "competitor_research": competitor_research
                 }
             )
-            print(f"✓ Saved research cache for: {request.problem}")
+            print(f"✓ Saved research cache for: {sanitized_name}")
 
         # Step 2: Generate tree with research context and LLM-powered L2/L3
         tree = generate_hypothesis_tree(
@@ -517,8 +539,8 @@ async def save_tree(request: SaveRequest):
 
         return {
             "filepath": str(result["filepath"]),
-            "version": result["metadata"]["version"],
-            "timestamp": result["metadata"]["timestamp"],
+            "version": result["version"],
+            "timestamp": result["timestamp"],
             "status": "success"
         }
     except Exception as e:
