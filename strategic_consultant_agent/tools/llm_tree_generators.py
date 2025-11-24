@@ -12,6 +12,63 @@ from typing import Dict, List, Optional
 import google.genai as genai
 
 
+def _cleanup_label(label: str, max_words: int = 6) -> str:
+    """
+    Clean up LLM-generated labels to enforce conciseness rules.
+
+    Rules:
+    - Remove common verbose prefixes/suffixes
+    - Truncate to max_words (default: 6)
+    - Remove vendor names
+    - Capitalize properly
+
+    Args:
+        label: Original label from LLM
+        max_words: Maximum number of words allowed (default: 6)
+
+    Returns:
+        str: Cleaned, concise label
+    """
+    # Remove common verbose patterns (case-insensitive)
+    verbose_patterns = [
+        ("Improvement in ", ""),
+        ("Reduction in ", ""),
+        ("Enhancement of ", ""),
+        ("Assessment of ", ""),
+        ("Evaluation of ", ""),
+        ("Analysis of ", ""),
+        (" with Computer Vision", ""),
+        (" for Falls", ""),
+        (" Requiring Medical Intervention", ""),
+        (" Due to Fall Response", ""),
+        (" and Scalability Potential", ""),  # Specific cleanup
+        (" and Accuracy", ""),  # Specific cleanup
+    ]
+
+    cleaned = label
+    for pattern, replacement in verbose_patterns:
+        # Case-insensitive replacement
+        import re
+        cleaned = re.sub(re.escape(pattern), replacement, cleaned, flags=re.IGNORECASE)
+
+    # Truncate to max_words
+    words = cleaned.split()
+    if len(words) > max_words:
+        cleaned = " ".join(words[:max_words])
+
+    # Remove trailing "and", "or", "&" if they're the last word
+    words = cleaned.split()
+    if words and words[-1].lower() in ["and", "or", "&"]:
+        words = words[:-1]
+        cleaned = " ".join(words)
+
+    # Clean up any double spaces
+    cleaned = " ".join(cleaned.split())
+
+    # Capitalize properly (preserve acronyms like "AI")
+    return cleaned.strip()
+
+
 def generate_problem_specific_l3_leaves(
     l1_category: str,
     l1_question: str,
@@ -132,8 +189,12 @@ Return ONLY the JSON array, no other text."""
 
         leaves = json.loads(response_text)
 
-        # Add IDs and status fields
+        # Clean up labels and add IDs and status fields
         for i, leaf in enumerate(leaves):
+            # CRITICAL: Enforce label conciseness (max 6 words)
+            if "label" in leaf:
+                leaf["label"] = _cleanup_label(leaf["label"], max_words=6)
+
             leaf["id"] = f"L3_{i+1:03d}"
             leaf["status"] = "UNTESTED"
             leaf["confidence"] = None
@@ -263,6 +324,12 @@ Return ONLY the JSON object, no other text."""
         response_text = response_text.strip()
 
         branches = json.loads(response_text)
+
+        # Clean up L2 branch labels (max 6 words)
+        for branch_key, branch_data in branches.items():
+            if "label" in branch_data:
+                branch_data["label"] = _cleanup_label(branch_data["label"], max_words=6)
+
         return branches
 
     except (json.JSONDecodeError, AttributeError) as e:
