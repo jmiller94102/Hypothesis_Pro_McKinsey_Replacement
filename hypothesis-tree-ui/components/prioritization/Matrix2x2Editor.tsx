@@ -130,26 +130,29 @@ export function Matrix2x2Editor({
     borderClass: string
   ) => (
     <div
-      className={`${colorClass} ${borderClass} rounded-lg p-4 transition-all ${
+      className={`${colorClass} ${borderClass} rounded-lg p-3 transition-all flex flex-col ${
         draggedItem && draggedItem.quadrant !== quadrantKey ? 'ring-2 ring-blue-400' : ''
       }`}
       onDragOver={handleDragOver}
       onDrop={(e) => handleDrop(e, quadrantKey)}
     >
-      <div className="flex justify-between items-start mb-2">
-        <div className="text-lg font-bold">{name}</div>
+      {/* Compact header with title, position, and add button on same line */}
+      <div className="flex justify-between items-center mb-2 leading-tight">
+        <div className="flex items-baseline gap-2">
+          <span className="text-base font-bold">{name}</span>
+          <span className="text-xs text-gray-400">({position})</span>
+        </div>
         <button
           onClick={() => handleStartAdd(quadrantKey)}
-          className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+          className="text-xs px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded transition-colors flex-shrink-0"
           title="Add item"
         >
           + Add
         </button>
       </div>
-      <div className="text-sm text-gray-400 mb-3">{position}</div>
-      <div className="text-xs text-gray-500 mb-4">{description}</div>
+      <div className="text-xs text-gray-500 mb-2 leading-tight">{description}</div>
 
-      <ul className="space-y-2">
+      <ul className="space-y-1.5 flex-1 overflow-auto">
         {items.length === 0 && addingTo !== quadrantKey && (
           <li className="text-gray-600 text-sm italic">No items</li>
         )}
@@ -159,35 +162,35 @@ export function Matrix2x2Editor({
             key={idx}
             draggable
             onDragStart={() => handleDragStart(quadrantKey, idx)}
-            className={`text-sm bg-gray-800 rounded px-3 py-2 cursor-move hover:bg-gray-700 transition-colors ${
+            className={`text-xs bg-gray-800 rounded px-2 py-1.5 cursor-move hover:bg-gray-700 transition-colors leading-tight ${
               draggedItem?.quadrant === quadrantKey && draggedItem?.index === idx
                 ? 'opacity-50'
                 : ''
             }`}
           >
             {editingItem?.quadrant === quadrantKey && editingItem?.index === idx ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <input
                   type="text"
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  className="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSaveEdit();
                     if (e.key === 'Escape') handleCancelEdit();
                   }}
                 />
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   <button
                     onClick={handleSaveEdit}
-                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
+                    className="text-xs px-1.5 py-0.5 bg-blue-600 hover:bg-blue-700 rounded"
                   >
                     Save
                   </button>
                   <button
                     onClick={handleCancelEdit}
-                    className="text-xs px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded"
+                    className="text-xs px-1.5 py-0.5 bg-gray-600 hover:bg-gray-700 rounded"
                   >
                     Cancel
                   </button>
@@ -195,21 +198,21 @@ export function Matrix2x2Editor({
               </div>
             ) : (
               <div className="flex justify-between items-center group">
-                <span>{item}</span>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="flex-1">{item}</span>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                   <button
                     onClick={() => handleStartEdit(quadrantKey, idx, item)}
-                    className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded"
+                    className="text-xs px-1.5 py-0.5 bg-blue-600 hover:bg-blue-700 rounded"
                     title="Edit"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(quadrantKey, idx)}
-                    className="text-xs px-2 py-1 bg-red-600 hover:bg-red-700 rounded"
+                    className="text-xs px-1.5 py-0.5 bg-red-600 hover:bg-red-700 rounded"
                     title="Delete"
                   >
-                    Delete
+                    Del
                   </button>
                 </div>
               </div>
@@ -218,30 +221,30 @@ export function Matrix2x2Editor({
         ))}
 
         {addingTo === quadrantKey && (
-          <li className="text-sm bg-gray-800 rounded px-3 py-2">
-            <div className="space-y-2">
+          <li className="text-xs bg-gray-800 rounded px-2 py-1.5">
+            <div className="space-y-1.5">
               <input
                 type="text"
                 value={newItemText}
                 onChange={(e) => setNewItemText(e.target.value)}
                 placeholder="Enter new item..."
-                className="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm focus:outline-none focus:border-blue-500"
+                className="w-full bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs focus:outline-none focus:border-blue-500"
                 autoFocus
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleSaveAdd();
                   if (e.key === 'Escape') handleCancelAdd();
                 }}
               />
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button
                   onClick={handleSaveAdd}
-                  className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 rounded"
+                  className="text-xs px-1.5 py-0.5 bg-green-600 hover:bg-green-700 rounded"
                 >
                   Add
                 </button>
                 <button
                   onClick={handleCancelAdd}
-                  className="text-xs px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded"
+                  className="text-xs px-1.5 py-0.5 bg-gray-600 hover:bg-gray-700 rounded"
                 >
                   Cancel
                 </button>
@@ -254,15 +257,18 @@ export function Matrix2x2Editor({
   );
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-      <h2 className="text-2xl font-bold mb-4">Priority Matrix (Editable)</h2>
-      <p className="text-gray-400 mb-2">{y_axis} vs. {x_axis}</p>
-      <p className="text-sm text-gray-500 mb-6">
-        Drag items to move between quadrants, or use Edit/Delete buttons
-      </p>
+    <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
+      {/* Compact inline header */}
+      <div className="flex items-baseline gap-3 mb-3 flex-wrap leading-tight">
+        <h2 className="text-xl font-bold">Priority Matrix (Editable)</h2>
+        <span className="text-sm text-gray-400">{y_axis} vs. {x_axis}</span>
+        <span className="text-xs text-gray-500">
+          Drag items to move between quadrants, or use Edit/Delete buttons
+        </span>
+      </div>
 
       {/* 2x2 Grid */}
-      <div className="grid grid-cols-2 gap-4 mb-6" style={{ minHeight: '500px' }}>
+      <div className="grid grid-cols-2 grid-rows-2 gap-3 mb-4">
         {/* Q1: Top-Left (High Y, Low X) - Quick Wins */}
         {renderQuadrant(
           'Q1',
@@ -309,20 +315,20 @@ export function Matrix2x2Editor({
       </div>
 
       {/* Axis Labels */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="text-center text-sm text-gray-500">← Low {x_axis}</div>
-        <div className="text-center text-sm text-gray-500">High {x_axis} →</div>
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div className="text-center text-xs text-gray-500 leading-tight">← Low {x_axis}</div>
+        <div className="text-center text-xs text-gray-500 leading-tight">High {x_axis} →</div>
       </div>
 
       {/* Recommendations */}
       {recommendations && recommendations.length > 0 && (
-        <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-4 mt-4">
-          <h3 className="text-blue-400 font-semibold mb-3">Recommendations</h3>
-          <ul className="space-y-2">
+        <div className="bg-blue-900/20 border border-blue-700 rounded-lg p-3">
+          <h3 className="text-sm text-blue-400 font-semibold mb-2">Recommendations</h3>
+          <ul className="space-y-1">
             {recommendations.map((rec, idx) => (
-              <li key={idx} className="text-sm text-gray-300 flex items-start">
+              <li key={idx} className="text-xs text-gray-300 flex items-start leading-tight">
                 <span className="text-blue-500 mr-2">•</span>
-                {rec}
+                <span className="flex-1">{rec}</span>
               </li>
             ))}
           </ul>

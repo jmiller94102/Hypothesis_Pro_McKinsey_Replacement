@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { MainTreeView } from '@/components/layout/MainTreeView';
 import { DebugPanel } from '@/components/layout/DebugPanel';
 import { TreeControls } from '@/components/layout/TreeControls';
+import { MatrixControls } from '@/components/layout/MatrixControls';
 import { Matrix2x2 } from '@/components/prioritization/Matrix2x2';
 import { Matrix2x2Editor } from '@/components/prioritization/Matrix2x2Editor';
 import { api } from '@/lib/api-client';
@@ -26,6 +27,7 @@ function EditorContent() {
   const [versions, setVersions] = useState<ProjectVersion[]>([]);
   const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState(1);
+  const [matrixZoom, setMatrixZoom] = useState(1);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -356,6 +358,19 @@ function EditorContent() {
     addDebugLog('Reset zoom to 100%', 'info');
   }
 
+  // Matrix zoom controls
+  function handleMatrixZoomIn() {
+    setMatrixZoom((prev) => Math.min(2, prev + 0.1));
+  }
+
+  function handleMatrixZoomOut() {
+    setMatrixZoom((prev) => Math.max(0.5, prev - 0.1));
+  }
+
+  function handleMatrixZoomReset() {
+    setMatrixZoom(1);
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-950">
@@ -447,26 +462,42 @@ function EditorContent() {
         )}
 
         {activeTab === 'matrix' && (
-          <div className="flex-1 overflow-auto p-6">
-            {priorityMatrix ? (
-              <Matrix2x2Editor
-                projectId={projectId}
-                matrixData={priorityMatrix}
-                onMatrixUpdate={setPriorityMatrix}
-                onAddItem={handleAddMatrixItem}
-                onDeleteItem={handleDeleteMatrixItem}
-                onEditItem={handleEditMatrixItem}
-                onMoveItem={handleMoveMatrixItem}
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center text-gray-500">
-                  <p className="text-lg mb-2">No Priority Matrix Available</p>
-                  <p className="text-sm">Generate a new project to see the priority matrix</p>
+          <>
+            <MatrixControls
+              zoom={matrixZoom}
+              onZoomIn={handleMatrixZoomIn}
+              onZoomOut={handleMatrixZoomOut}
+              onZoomReset={handleMatrixZoomReset}
+            />
+            <div
+              className="flex-1 overflow-auto p-6"
+              style={{
+                transform: `scale(${matrixZoom})`,
+                transformOrigin: 'top left',
+                width: `${100 / matrixZoom}%`,
+                height: `${100 / matrixZoom}%`
+              }}
+            >
+              {priorityMatrix ? (
+                <Matrix2x2Editor
+                  projectId={projectId}
+                  matrixData={priorityMatrix}
+                  onMatrixUpdate={setPriorityMatrix}
+                  onAddItem={handleAddMatrixItem}
+                  onDeleteItem={handleDeleteMatrixItem}
+                  onEditItem={handleEditMatrixItem}
+                  onMoveItem={handleMoveMatrixItem}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center text-gray-500">
+                    <p className="text-lg mb-2">No Priority Matrix Available</p>
+                    <p className="text-sm">Generate a new project to see the priority matrix</p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          </>
         )}
 
         {/* Debug Panel - Collapsible bottom */}
