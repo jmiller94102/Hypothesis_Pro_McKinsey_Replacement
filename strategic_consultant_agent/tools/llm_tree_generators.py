@@ -31,18 +31,34 @@ def _cleanup_label(label: str, max_words: int = 6) -> str:
     """
     # Remove common verbose patterns (case-insensitive)
     verbose_patterns = [
+        # Verbose prefixes to remove
         ("Improvement in ", ""),
         ("Reduction in ", ""),
+        ("Decrease in ", ""),
+        ("Increase in ", ""),
         ("Enhancement of ", ""),
         ("Assessment of ", ""),
         ("Evaluation of ", ""),
         ("Analysis of ", ""),
+        ("Optimized ", ""),
+        ("Reduced ", ""),
+
+        # Verbose suffixes and phrases to remove
         (" with Computer Vision", ""),
         (" for Falls", ""),
         (" Requiring Medical Intervention", ""),
         (" Due to Fall Response", ""),
-        (" and Scalability Potential", ""),  # Specific cleanup
-        (" and Accuracy", ""),  # Specific cleanup
+        (" and Scalability Potential", ""),
+        (" and Accuracy", ""),
+        (" from Direct Incident Response", ""),
+        (" to Verified Falls", ""),
+        (" Based on Real-time Needs", ""),
+        (" Post-Fall", ""),
+        (" Levels", ""),
+        (" Leading to Serious Injury", ""),
+
+        # Generic cleanup
+        (" Reallocation", " Allocation"),  # Shorter synonym
     ]
 
     cleaned = label

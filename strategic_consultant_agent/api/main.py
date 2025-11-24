@@ -3,13 +3,14 @@
 Provides REST API endpoints for tree generation, validation, and persistence.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
 from pathlib import Path
 import json
-from typing import Any, Optional
+from typing import Any, Optional, Dict
+import asyncio
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.mece_validator import validate_mece_structure
