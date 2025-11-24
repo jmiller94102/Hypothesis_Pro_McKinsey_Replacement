@@ -85,7 +85,7 @@ def generate_problem_specific_l3_leaves(
     market_research: Optional[str] = None,
     competitor_research: Optional[str] = None,
     num_leaves: int = 3,
-    model_name: str = "gemini-1.5-flash",
+    model_name: str = "gemini-2.5-flash",
 ) -> List[Dict]:
     """
     Generate problem-specific L3 leaves using LLM with research context.
@@ -224,7 +224,7 @@ def generate_problem_specific_l2_branches(
     market_research: Optional[str] = None,
     competitor_research: Optional[str] = None,
     num_branches: int = 3,
-    model_name: str = "gemini-1.5-flash",
+    model_name: str = "gemini-2.5-flash",
 ) -> Dict[str, Dict]:
     """
     Generate problem-specific L2 branches using LLM with research context.

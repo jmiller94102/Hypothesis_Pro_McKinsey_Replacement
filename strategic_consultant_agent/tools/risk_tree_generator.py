@@ -14,7 +14,7 @@ def generate_risk_assessment_tree(
     market_research: Optional[str] = None,
     competitor_research: Optional[str] = None,
     use_llm_generation: bool = True,
-    model_name: str = "gemini-1.5-flash",
+    model_name: str = "gemini-2.5-flash",
 ) -> Dict:
     """
     Generate a risk assessment tree with probability-impact scoring.

@@ -72,7 +72,7 @@ def perform_research(problem: str) -> tuple[str, str]:
     # Market research agent
     market_agent = Agent(
         name="market_researcher",
-        model=Gemini(model="gemini-1.5-flash"),
+        model=Gemini(model="gemini-2.5-flash"),
         instruction=f"""You are a market research analyst specializing in healthcare technology and senior living industries.
 
 Your task is to research the market context for: {problem}
@@ -95,7 +95,7 @@ If search results are limited, note the data gaps clearly.""",
     # Competitor research agent
     competitor_agent = Agent(
         name="competitor_researcher",
-        model=Gemini(model="gemini-1.5-flash"),
+        model=Gemini(model="gemini-2.5-flash"),
         instruction=f"""You are a competitive intelligence analyst specializing in healthcare technology.
 
 Your task is to research the competitive landscape for: {problem}
