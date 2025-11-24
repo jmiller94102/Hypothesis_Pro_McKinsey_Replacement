@@ -245,3 +245,211 @@ def _check_level_consistency(tree: Dict) -> List[str]:
         )
 
     return inconsistencies
+
+
+def validate_l2_branches(tree: Dict, l1_key: str) -> Dict:
+    """
+    Validate L2 branches within a specific L1 category for MECE compliance.
+
+    Args:
+        tree: Full tree structure
+        l1_key: The L1 category key to validate (e.g., "L1_DESIRABILITY")
+
+    Returns:
+        dict: {
+            "is_mece": bool,
+            "level": "L2",
+            "component": str (L1 key),
+            "issues": {
+                "overlaps": [...],
+                "level_inconsistencies": [...]
+            }
+        }
+    """
+    issues = {"overlaps": [], "level_inconsistencies": []}
+
+    if l1_key not in tree:
+        return {
+            "is_mece": False,
+            "level": "L2",
+            "component": l1_key,
+            "issues": {"overlaps": [f"L1 category {l1_key} not found"], "level_inconsistencies": []}
+        }
+
+    l1_data = tree[l1_key]
+    l2_branches = l1_data.get("L2", {})
+
+    if not l2_branches:
+        return {
+            "is_mece": False,
+            "level": "L2",
+            "component": l1_key,
+            "issues": {"overlaps": [], "level_inconsistencies": ["No L2 branches found"]}
+        }
+
+    # Check for overlaps between L2 branches
+    l2_keys = list(l2_branches.keys())
+    for i, l2_key_a in enumerate(l2_keys):
+        label_a = l2_branches[l2_key_a].get("label", l2_key_a).lower()
+
+        for l2_key_b in l2_keys[i + 1:]:
+            label_b = l2_branches[l2_key_b].get("label", l2_key_b).lower()
+
+            # Check for keyword overlap
+            words_a = set(label_a.split()) - {"the", "and", "or", "of", "to", "in", "for"}
+            words_b = set(label_b.split()) - {"the", "and", "or", "of", "to", "in", "for"}
+
+            common_words = words_a & words_b
+            if len(common_words) > 1:
+                issues["overlaps"].append(
+                    f"L2 branches '{l2_branches[l2_key_a]['label']}' and "
+                    f"'{l2_branches[l2_key_b]['label']}' may overlap (shared keywords: {common_words})"
+                )
+
+    # Check abstraction level consistency
+    l2_labels = [branch.get("label", "").lower() for branch in l2_branches.values()]
+
+    # Check for mixing strategic and tactical levels
+    strategic_indicators = ["strategy", "approach", "model", "framework", "structure"]
+    tactical_indicators = ["task", "action", "step", "activity", "process"]
+
+    has_strategic = any(any(ind in label for ind in strategic_indicators) for label in l2_labels)
+    has_tactical = any(any(ind in label for ind in tactical_indicators) for label in l2_labels)
+
+    if has_strategic and has_tactical:
+        issues["level_inconsistencies"].append(
+            f"L2 branches in {l1_key} mix strategic and tactical levels"
+        )
+
+    # Check for too many branches (overwhelming for users)
+    if len(l2_branches) > 7:
+        issues["level_inconsistencies"].append(
+            f"L2 in {l1_key} has {len(l2_branches)} branches - recommend 3-7 for clarity"
+        )
+
+    has_critical_issues = bool(issues["overlaps"] or issues["level_inconsistencies"])
+
+    return {
+        "is_mece": not has_critical_issues,
+        "level": "L2",
+        "component": l1_key,
+        "issues": issues
+    }
+
+
+def validate_l3_leaves(tree: Dict, l1_key: str, l2_key: str) -> Dict:
+    """
+    Validate L3 leaves within a specific L2 branch for MECE compliance.
+
+    Args:
+        tree: Full tree structure
+        l1_key: The L1 category key (e.g., "L1_DESIRABILITY")
+        l2_key: The L2 branch key (e.g., "L2_USER_SATISFACTION")
+
+    Returns:
+        dict: {
+            "is_mece": bool,
+            "level": "L3",
+            "component": str (L1_key.L2_key),
+            "issues": {
+                "overlaps": [...],
+                "level_inconsistencies": [...],
+                "missing_fields": [...]
+            }
+        }
+    """
+    issues = {"overlaps": [], "level_inconsistencies": [], "missing_fields": []}
+
+    if l1_key not in tree:
+        return {
+            "is_mece": False,
+            "level": "L3",
+            "component": f"{l1_key}.{l2_key}",
+            "issues": {"overlaps": [f"L1 category {l1_key} not found"],
+                      "level_inconsistencies": [],
+                      "missing_fields": []}
+        }
+
+    l2_branches = tree[l1_key].get("L2", {})
+
+    if l2_key not in l2_branches:
+        return {
+            "is_mece": False,
+            "level": "L3",
+            "component": f"{l1_key}.{l2_key}",
+            "issues": {"overlaps": [f"L2 branch {l2_key} not found in {l1_key}"],
+                      "level_inconsistencies": [],
+                      "missing_fields": []}
+        }
+
+    l3_leaves = l2_branches[l2_key].get("L3", {})
+
+    if not l3_leaves:
+        return {
+            "is_mece": False,
+            "level": "L3",
+            "component": f"{l1_key}.{l2_key}",
+            "issues": {"overlaps": [],
+                      "level_inconsistencies": ["No L3 leaves found"],
+                      "missing_fields": []}
+        }
+
+    # Check for overlaps between L3 leaves
+    l3_keys = list(l3_leaves.keys())
+    for i, l3_key_a in enumerate(l3_keys):
+        label_a = l3_leaves[l3_key_a].get("label", l3_key_a).lower()
+
+        for l3_key_b in l3_keys[i + 1:]:
+            label_b = l3_leaves[l3_key_b].get("label", l3_key_b).lower()
+
+            # Check for keyword overlap
+            words_a = set(label_a.split()) - {"the", "and", "or", "of", "to", "in", "for", "by"}
+            words_b = set(label_b.split()) - {"the", "and", "or", "of", "to", "in", "for", "by"}
+
+            common_words = words_a & words_b
+            if len(common_words) > 1:
+                issues["overlaps"].append(
+                    f"L3 leaves '{l3_leaves[l3_key_a]['label']}' and "
+                    f"'{l3_leaves[l3_key_b]['label']}' may overlap (shared keywords: {common_words})"
+                )
+
+    # Validate required fields for each L3 leaf
+    required_fields = ["label", "question", "metric_type", "target", "data_source"]
+
+    for l3_key, l3_data in l3_leaves.items():
+        missing = [field for field in required_fields if field not in l3_data or not l3_data[field]]
+        if missing:
+            issues["missing_fields"].append(
+                f"L3 leaf '{l3_data.get('label', l3_key)}' missing required fields: {missing}"
+            )
+
+    # Check abstraction level consistency - L3 should be specific/measurable
+    l3_labels = [leaf.get("label", "").lower() for leaf in l3_leaves.values()]
+
+    # L3 should be concrete, not abstract
+    abstract_indicators = ["overall", "general", "broad", "strategic", "high-level"]
+    has_abstract = any(any(ind in label for ind in abstract_indicators) for label in l3_labels)
+
+    if has_abstract:
+        issues["level_inconsistencies"].append(
+            f"L3 leaves in {l1_key}.{l2_key} should be specific/measurable, not abstract"
+        )
+
+    # Check for too many leaves
+    if len(l3_leaves) > 7:
+        issues["level_inconsistencies"].append(
+            f"L3 in {l1_key}.{l2_key} has {len(l3_leaves)} leaves - recommend 3-7 for clarity"
+        )
+
+    has_critical_issues = bool(
+        issues["overlaps"] or
+        issues["level_inconsistencies"] or
+        issues["missing_fields"]
+    )
+
+    return {
+        "is_mece": not has_critical_issues,
+        "level": "L3",
+        "component": f"{l1_key}.{l2_key}",
+        "issues": issues
+    }

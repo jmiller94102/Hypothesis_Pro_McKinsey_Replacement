@@ -7,7 +7,7 @@ research context.
 
 import json
 import os
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Tuple
 
 import google.genai as genai
 
@@ -948,3 +948,501 @@ Return ONLY the JSON object, no other text."""
                     "question": l2_data.get("question", ""),
                 }
         return fallback
+
+
+def generate_entire_tree_l2_branches_batch_with_validation(
+    framework_structure: Dict[str, Any],
+    problem_statement: str,
+    market_research: Optional[str] = None,
+    competitor_research: Optional[str] = None,
+    model_name: str = "gemini-2.5-flash",
+    max_attempts: int = 3,
+) -> Tuple[Dict[str, Dict[str, Dict]], Dict]:
+    """
+    Generate L2 branches with incremental MECE validation and memory-based feedback.
+
+    This wraps generate_entire_tree_l2_branches_batch() with a validation loop that:
+    1. Generates L2 branches for all L1 categories
+    2. Validates each L1's L2 branches separately
+    3. Tracks failures in ValidationMemory
+    4. Provides feedback to LLM for regeneration
+    5. Only regenerates failed L1 categories (targeted regeneration)
+
+    Args:
+        framework_structure: The framework template with L1 categories
+        problem_statement: The strategic question
+        market_research: Market research context (optional)
+        competitor_research: Competitive analysis context (optional)
+        model_name: Gemini model to use
+        max_attempts: Maximum regeneration attempts per L1 (default: 3)
+
+    Returns:
+        tuple: (l2_branches_dict, validation_results)
+            - l2_branches_dict: {L1_key: {L2_key: {"label": ..., "question": ...}}}
+            - validation_results: {
+                "all_passed": bool,
+                "l1_results": {L1_key: validation_result},
+                "attempts": {L1_key: int}
+            }
+    """
+    from .validation_memory import ValidationMemory
+    from .mece_validator import validate_l2_branches
+
+    memory = ValidationMemory()
+    validation_results = {
+        "all_passed": False,
+        "l1_results": {},
+        "attempts": {}
+    }
+
+    # Initial generation
+    l2_branches = generate_entire_tree_l2_branches_batch(
+        framework_structure=framework_structure,
+        problem_statement=problem_statement,
+        market_research=market_research,
+        competitor_research=competitor_research,
+        model_name=model_name
+    )
+
+    # Build temporary tree structure for validation
+    temp_tree = {}
+    for l1_key in framework_structure.keys():
+        temp_tree[l1_key] = {
+            "label": framework_structure[l1_key].get("label", l1_key),
+            "L2": {}
+        }
+        if l1_key in l2_branches:
+            for l2_key, l2_data in l2_branches[l1_key].items():
+                temp_tree[l1_key]["L2"][l2_key] = l2_data
+
+    # Validate each L1 category's L2 branches
+    failed_l1_keys = []
+    for l1_key in framework_structure.keys():
+        validation_result = validate_l2_branches(temp_tree, l1_key)
+        validation_results["l1_results"][l1_key] = validation_result
+        validation_results["attempts"][l1_key] = 1
+
+        if not validation_result["is_mece"]:
+            failed_l1_keys.append(l1_key)
+            memory.record_failure(
+                level="L2",
+                component=l1_key,
+                validation_result=validation_result,
+                iteration=1
+            )
+
+    # Regeneration loop for failed L1 categories only
+    attempt = 2
+    while failed_l1_keys and attempt <= max_attempts:
+        print(f"L2 Validation: Regenerating {len(failed_l1_keys)} failed L1 categories (attempt {attempt}/{max_attempts})")
+
+        for l1_key in failed_l1_keys[:]:  # Copy list to allow modification during iteration
+            # Get feedback from memory
+            feedback = memory.get_feedback_prompt(level="L2", component=l1_key)
+
+            # Regenerate just this L1's L2 branches
+            regenerated_l2 = generate_single_l1_l2_branches(
+                l1_key=l1_key,
+                l1_data=framework_structure[l1_key],
+                problem_statement=problem_statement,
+                feedback=feedback,
+                model_name=model_name
+            )
+
+            # Update the tree
+            l2_branches[l1_key] = regenerated_l2
+            temp_tree[l1_key]["L2"] = regenerated_l2
+
+            # Re-validate
+            validation_result = validate_l2_branches(temp_tree, l1_key)
+            validation_results["l1_results"][l1_key] = validation_result
+            validation_results["attempts"][l1_key] = attempt
+
+            if validation_result["is_mece"]:
+                failed_l1_keys.remove(l1_key)
+            else:
+                memory.record_failure(
+                    level="L2",
+                    component=l1_key,
+                    validation_result=validation_result,
+                    iteration=attempt
+                )
+
+        attempt += 1
+
+    validation_results["all_passed"] = len(failed_l1_keys) == 0
+
+    return l2_branches, validation_results
+
+
+def generate_single_l1_l2_branches(
+    l1_key: str,
+    l1_data: Dict,
+    problem_statement: str,
+    feedback: str = "",
+    model_name: str = "gemini-2.5-flash",
+) -> Dict[str, Dict]:
+    """
+    Generate L2 branches for a single L1 category with optional feedback from previous failures.
+
+    Args:
+        l1_key: L1 category identifier
+        l1_data: L1 category data from framework
+        problem_statement: Strategic question
+        feedback: Formatted feedback from ValidationMemory (optional)
+        model_name: Gemini model to use
+
+    Returns:
+        dict: {L2_key: {"label": ..., "question": ...}}
+    """
+    import google.generativeai as genai
+    import json
+    import os
+
+    l1_label = l1_data.get("label", l1_key)
+    l1_question = l1_data.get("question", "")
+    l1_description = l1_data.get("description", "")
+
+    prompt = f"""You are a senior strategy consultant generating L2 branches for a strategic decision tree.
+
+**Strategic Question:** {problem_statement}
+
+**L1 Category:**
+- Key: {l1_key}
+- Label: {l1_label}
+- Question: {l1_question}
+- Description: {l1_description}
+
+{feedback}
+
+**Task:** Generate 3-7 L2 branches for this L1 category that are MECE (Mutually Exclusive, Collectively Exhaustive).
+
+**Requirements:**
+1. **MECE Compliance**: Branches must NOT overlap and must comprehensively cover the L1 category
+2. **Context-Aware Labels**: Customize labels to match the problem domain (2-5 words, NO vendor names)
+3. **Clear Questions**: One focused question per branch (1 sentence, NO vendor names)
+4. **Appropriate Count**: Generate 3-7 branches based on complexity needed for completeness
+
+**Output Format (JSON):**
+{{
+  "BRANCH_KEY_1": {{
+    "label": "Context-specific label",
+    "question": "Focused question"
+  }},
+  "BRANCH_KEY_2": {{
+    "label": "Context-specific label",
+    "question": "Focused question"
+  }}
+}}
+
+Return ONLY the JSON object, no other text."""
+
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt,
+    )
+
+    try:
+        response_text = response.text.strip()
+
+        # Extract JSON from response
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        l2_branches = json.loads(response_text)
+
+        # Clean up labels
+        for l2_key, l2_data in l2_branches.items():
+            if "label" in l2_data:
+                l2_data["label"] = _cleanup_label(l2_data["label"], max_words=6)
+
+        return l2_branches
+
+    except (json.JSONDecodeError, AttributeError, KeyError) as e:
+        print(f"Warning: Failed to parse L2 LLM response for {l1_key}: {e}")
+
+        # Fallback: return template structure
+        fallback = {}
+        for l2_key, l2_data in l1_data.get("L2_branches", {}).items():
+            fallback[l2_key] = {
+                "label": l2_data.get("label", l2_key),
+                "question": l2_data.get("question", ""),
+            }
+        return fallback
+
+
+def generate_l1_category_batch_with_validation(
+    l1_key: str,
+    l1_data: Dict[str, Any],
+    problem_statement: str,
+    market_research: Optional[str] = None,
+    competitor_research: Optional[str] = None,
+    num_leaves_per_branch: int = 3,
+    model_name: str = "gemini-2.5-flash",
+    max_attempts: int = 3,
+) -> Tuple[Dict[str, List[Dict]], Dict]:
+    """
+    Generate L3 leaves for a single L1 category with incremental MECE validation.
+
+    This wraps generate_l1_category_batch() with a validation loop that:
+    1. Generates L3 leaves for all L2 branches in this L1
+    2. Validates each L2's L3 leaves separately
+    3. Tracks failures in ValidationMemory
+    4. Provides feedback to LLM for regeneration
+    5. Only regenerates failed L2 branches (targeted regeneration)
+
+    Args:
+        l1_key: L1 category identifier
+        l1_data: L1 category data including L2 branches
+        problem_statement: Strategic question
+        market_research: Market research context (optional)
+        competitor_research: Competitive analysis context (optional)
+        num_leaves_per_branch: Number of L3 leaves per L2 branch
+        model_name: Gemini model to use
+        max_attempts: Maximum regeneration attempts per L2 (default: 3)
+
+    Returns:
+        tuple: (l3_leaves_dict, validation_results)
+            - l3_leaves_dict: {L2_key: [L3_leaves]}
+            - validation_results: {
+                "all_passed": bool,
+                "l2_results": {L2_key: validation_result},
+                "attempts": {L2_key: int}
+            }
+    """
+    from .validation_memory import ValidationMemory
+    from .mece_validator import validate_l3_leaves
+
+    memory = ValidationMemory()
+    validation_results = {
+        "all_passed": False,
+        "l2_results": {},
+        "attempts": {}
+    }
+
+    # Initial generation for all L2 branches in this L1
+    l3_leaves = generate_l1_category_batch(
+        l1_key=l1_key,
+        l1_data=l1_data,
+        problem_statement=problem_statement,
+        market_research=market_research,
+        competitor_research=competitor_research,
+        num_leaves_per_branch=num_leaves_per_branch,
+        model_name=model_name
+    )
+
+    # Build temporary tree structure for validation
+    temp_tree = {
+        l1_key: {
+            "label": l1_data.get("label", l1_key),
+            "L2": {}
+        }
+    }
+
+    for l2_key in l1_data.get("L2_branches", {}).keys():
+        temp_tree[l1_key]["L2"][l2_key] = {
+            "label": l1_data["L2_branches"][l2_key].get("label", l2_key),
+            "L3": {}
+        }
+        if l2_key in l3_leaves:
+            for leaf in l3_leaves[l2_key]:
+                leaf_key = f"L3_{leaf.get('label', '').upper().replace(' ', '_')}"
+                temp_tree[l1_key]["L2"][l2_key]["L3"][leaf_key] = leaf
+
+    # Validate each L2's L3 leaves
+    failed_l2_keys = []
+    for l2_key in l1_data.get("L2_branches", {}).keys():
+        validation_result = validate_l3_leaves(temp_tree, l1_key, l2_key)
+        validation_results["l2_results"][l2_key] = validation_result
+        validation_results["attempts"][l2_key] = 1
+
+        if not validation_result["is_mece"]:
+            failed_l2_keys.append(l2_key)
+            memory.record_failure(
+                level="L3",
+                component=f"{l1_key}.{l2_key}",
+                validation_result=validation_result,
+                iteration=1
+            )
+
+    # Regeneration loop for failed L2 branches only
+    attempt = 2
+    while failed_l2_keys and attempt <= max_attempts:
+        print(f"L3 Validation ({l1_key}): Regenerating {len(failed_l2_keys)} failed L2 branches (attempt {attempt}/{max_attempts})")
+
+        for l2_key in failed_l2_keys[:]:  # Copy list to allow modification
+            # Get feedback from memory
+            feedback = memory.get_feedback_prompt(level="L3", component=f"{l1_key}.{l2_key}")
+
+            # Regenerate just this L2's L3 leaves
+            regenerated_l3 = generate_single_l2_l3_leaves(
+                l1_key=l1_key,
+                l1_data=l1_data,
+                l2_key=l2_key,
+                problem_statement=problem_statement,
+                feedback=feedback,
+                num_leaves_per_branch=num_leaves_per_branch,
+                model_name=model_name
+            )
+
+            # Update the leaves
+            l3_leaves[l2_key] = regenerated_l3
+
+            # Update temp tree
+            temp_tree[l1_key]["L2"][l2_key]["L3"] = {}
+            for leaf in regenerated_l3:
+                leaf_key = f"L3_{leaf.get('label', '').upper().replace(' ', '_')}"
+                temp_tree[l1_key]["L2"][l2_key]["L3"][leaf_key] = leaf
+
+            # Re-validate
+            validation_result = validate_l3_leaves(temp_tree, l1_key, l2_key)
+            validation_results["l2_results"][l2_key] = validation_result
+            validation_results["attempts"][l2_key] = attempt
+
+            if validation_result["is_mece"]:
+                failed_l2_keys.remove(l2_key)
+            else:
+                memory.record_failure(
+                    level="L3",
+                    component=f"{l1_key}.{l2_key}",
+                    validation_result=validation_result,
+                    iteration=attempt
+                )
+
+        attempt += 1
+
+    validation_results["all_passed"] = len(failed_l2_keys) == 0
+
+    return l3_leaves, validation_results
+
+
+def generate_single_l2_l3_leaves(
+    l1_key: str,
+    l1_data: Dict,
+    l2_key: str,
+    problem_statement: str,
+    feedback: str = "",
+    num_leaves_per_branch: int = 3,
+    model_name: str = "gemini-2.5-flash",
+) -> List[Dict]:
+    """
+    Generate L3 leaves for a single L2 branch with optional feedback from previous failures.
+
+    Args:
+        l1_key: L1 category identifier
+        l1_data: L1 category data
+        l2_key: L2 branch identifier
+        problem_statement: Strategic question
+        feedback: Formatted feedback from ValidationMemory (optional)
+        num_leaves_per_branch: Target number of leaves
+        model_name: Gemini model to use
+
+    Returns:
+        list: [L3_leaves] - List of leaf dictionaries
+    """
+    import google.generativeai as genai
+    import json
+    import os
+
+    l1_label = l1_data.get("label", l1_key)
+    l1_question = l1_data.get("question", "")
+
+    l2_data = l1_data.get("L2_branches", {}).get(l2_key, {})
+    l2_label = l2_data.get("label", l2_key)
+    l2_question = l2_data.get("question", "")
+
+    prompt = f"""You are a senior strategy consultant generating L3 testable hypotheses for a strategic decision tree.
+
+**Strategic Question:** {problem_statement}
+
+**L1 Category:** {l1_key} - {l1_label}
+- Question: {l1_question}
+
+**L2 Branch:** {l2_key} - {l2_label}
+- Question: {l2_question}
+
+{feedback}
+
+**Task:** Generate 3-7 L3 leaves for this L2 branch that are MECE (Mutually Exclusive, Collectively Exhaustive).
+
+**Requirements:**
+1. **MECE Compliance**: Leaves must NOT overlap and must comprehensively cover the L2 branch
+2. **Label Rules**: Concise key phrases (3-6 words), NO vendor names, NO specific numbers
+3. **Question Rules**: Clean, simple questions (1 sentence max), NO vendor names
+4. **Required Fields**: Each leaf must have:
+   - label: Concise phrase
+   - question: Testable question
+   - metric_type: "qualitative" or "quantitative"
+   - target: Benchmark with citation
+   - data_source: Where to get the data (vendor names OK here)
+
+**Output Format (JSON array):**
+[
+  {{
+    "label": "Leaf label",
+    "question": "Testable question?",
+    "metric_type": "quantitative",
+    "target": ">25% reduction vs baseline (KLAS 2024)",
+    "data_source": "Vendor analytics platform"
+  }}
+]
+
+Return ONLY the JSON array, no other text."""
+
+    client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
+
+    response = client.models.generate_content(
+        model=model_name,
+        contents=prompt,
+    )
+
+    try:
+        response_text = response.text.strip()
+
+        # Extract JSON from response
+        if response_text.startswith("```json"):
+            response_text = response_text[7:]
+        if response_text.startswith("```"):
+            response_text = response_text[3:]
+        if response_text.endswith("```"):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        l3_leaves = json.loads(response_text)
+
+        # Clean up labels
+        for leaf in l3_leaves:
+            if "label" in leaf:
+                leaf["label"] = _cleanup_label(leaf["label"], max_words=6)
+
+        return l3_leaves
+
+    except (json.JSONDecodeError, AttributeError, KeyError) as e:
+        print(f"Warning: Failed to parse L3 LLM response for {l1_key}.{l2_key}: {e}")
+
+        # Fallback: return template structure
+        fallback = []
+        for suggested_leaf in l2_data.get("suggested_L3", [])[:num_leaves_per_branch]:
+            fallback.append({
+                "label": suggested_leaf,
+                "question": f"What is the {suggested_leaf.lower()}?",
+                "metric_type": "quantitative",
+                "target": "TBD",
+                "data_source": "TBD"
+            })
+        return fallback if fallback else [
+            {
+                "label": "Placeholder Metric",
+                "question": "What is the key metric?",
+                "metric_type": "quantitative",
+                "target": "TBD",
+                "data_source": "TBD"
+            }
+        ]
