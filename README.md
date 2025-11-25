@@ -266,14 +266,6 @@ response = await runner.run(
 
 This agent is deployed to **Google Cloud Run** using the Google Agent Starter Pack infrastructure.
 
-### Live Deployment
-
-- **Endpoint**: https://hypothesis-tree-agent-up4ilqcfeq-uc.a.run.app
-- **Dev UI**: https://hypothesis-tree-agent-up4ilqcfeq-uc.a.run.app/dev-ui/
-- **Region**: us-central1
-- **Project**: kaggle-479307
-- **Framework**: Google ADK (Agent Development Kit)
-
 ### Deploy Your Own
 
 ```bash
