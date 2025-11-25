@@ -545,15 +545,15 @@ function EditorContent() {
                 onZoomOut={handleMatrixZoomOut}
                 onZoomReset={handleMatrixZoomReset}
               />
-              <div
-                className="flex-1 overflow-auto p-6"
-                style={{
-                  transform: `scale(${matrixZoom})`,
-                  transformOrigin: 'top left',
-                  width: `${100 / matrixZoom}%`,
-                  height: `${100 / matrixZoom}%`
-                }}
-              >
+              <div className="flex-1 overflow-auto">
+                <div
+                  className="p-6 min-w-fit"
+                  style={{
+                    transform: `scale(${matrixZoom})`,
+                    transformOrigin: 'top left',
+                    width: matrixZoom < 1 ? `${100 / matrixZoom}%` : '100%',
+                  }}
+                >
                 {matrixData ? (
                   <Matrix2x2Editor
                     projectId={projectId}
@@ -591,6 +591,7 @@ function EditorContent() {
                     </div>
                   </div>
                 )}
+                </div>
               </div>
             </>
           );

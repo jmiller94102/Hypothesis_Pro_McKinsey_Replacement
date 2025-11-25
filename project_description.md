@@ -1,6 +1,12 @@
+# HypothesisTree Pro  
+
+**Don’t get blindsided. Spot decision gaps before you scale or invest. Build in 5 minutes what consultants build in 5 weeks.**  
+
+In one run, HypothesisTree Pro turns vague "should we?" debates into a clear set of bets, tradeoffs, and experiments your team can act on **today**.  
+
 # Problem Statement  
 
-Strategic decision-making in growth-stage businesses is often slow, ad hoc, and inconsistent. Leaders wrestle with questions like *“Should we launch this product?”, “Which risks matter most?”, “Where is performance really breaking down?”* — but turning those questions into crisp, MECE hypothesis trees and prioritized testing roadmaps usually requires scarce MBB-level strategy talent.  
+Strategic decisions about where to scale, what to launch, or where to fix performance usually take days of meetings, weeks of slide-building, and a handful of scarce strategy experts. Leaders wrestle with questions like *“Should we launch this product?”, “Which risks matter most?”, “Where is performance really breaking down?”* — but turning those questions into a crisp, testable decision framework is slow, expensive, and inconsistent.  
 
 Most teams instead rely on:  
 
@@ -8,7 +14,7 @@ Most teams instead rely on:
   Siloed spreadsheets, scattered docs, and one-off slide decks that don’t connect into a coherent decision tree.  
 
 - **One-shot AI answers**  
-  Generic LLM outputs that sound confident but don’t enforce MECE structure, don’t iterate on validation feedback, and rarely capture true tradeoffs.  
+  Generic LLM outputs that sound confident but don’t expose decision gaps, don’t iterate on validation feedback, and rarely capture real tradeoffs.  
 
 - **Unstructured prioritization**  
   Gut-feel 2x2s that are not directly grounded in hypotheses, evidence, or testable metrics—making it hard to defend decisions to executives or boards.  
@@ -19,9 +25,9 @@ This leads to slow decisions, missed risks, over-investment in the wrong paths, 
 
 # Solution Statement  
 
-**HypothesisTree Pro** is an AI-powered strategic consultant that operationalizes top-tier consulting practice. It doesn’t just “answer your question”—it **builds a formal strategic reasoning structure around it.**  
+**HypothesisTree Pro** is an AI-powered strategic consultant that operationalizes top-tier consulting practice. It doesn’t just “answer your question” — it **builds the kind of decision framework a strategy firm would create, then shows you exactly what to test first.**  
 
-Given a strategic question (e.g., “Should we launch a fall detection product for eldercare facilities?”), the agent will:  
+Given a strategic question (e.g., “Should we launch a fall detection product for eldercare facilities?”), the agent system will:  
 
 - **Research the landscape automatically**  
   Parallel agents perform market and competitor research using live search, surfacing trends, vendors, benchmarks, and case studies.  
