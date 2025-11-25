@@ -14,9 +14,13 @@ from strategic_consultant_agent.prompts.matrix_generation.task_prioritization im
 from strategic_consultant_agent.prompts.matrix_generation.measurement_priorities import (
     MEASUREMENT_PRIORITIES_PROMPT,
 )
+from strategic_consultant_agent.prompts.matrix_generation.hypothesis_prioritization import (
+    HYPOTHESIS_PRIORITIZATION_PROMPT,
+)
 
 __all__ = [
     "RISK_REGISTER_PROMPT",
     "TASK_PRIORITIZATION_PROMPT",
     "MEASUREMENT_PRIORITIES_PROMPT",
+    "HYPOTHESIS_PRIORITIZATION_PROMPT",
 ]

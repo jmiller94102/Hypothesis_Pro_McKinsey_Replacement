@@ -10,7 +10,21 @@ import { MatrixControls } from '@/components/layout/MatrixControls';
 import { Matrix2x2 } from '@/components/prioritization/Matrix2x2';
 import { Matrix2x2Editor } from '@/components/prioritization/Matrix2x2Editor';
 import { api } from '@/lib/api-client';
-import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, NodeLevel, PriorityMatrix } from '@/lib/types';
+import type { HypothesisTree, MECEValidationResult, DebugLog, ProjectVersion, NodeLevel, PriorityMatrix, MatrixType, MatrixData } from '@/lib/types';
+
+// Tab configuration for navigation
+const TABS = [
+  { id: 'tree', label: 'Hypothesis Tree', matrixType: null },
+  { id: 'hypothesis', label: 'Hypothesis Priority', matrixType: 'hypothesis_prioritization' as MatrixType },
+  { id: 'risks', label: 'Risk Register', matrixType: 'risk_register' as MatrixType },
+  { id: 'tasks', label: 'Task Priority', matrixType: 'task_prioritization' as MatrixType },
+  { id: 'measurements', label: 'Measurement Priority', matrixType: 'measurement_priorities' as MatrixType },
+] as const;
+
+type TabId = typeof TABS[number]['id'];
+
+// API base URL for backend calls
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 function EditorContent() {
   const router = useRouter();
@@ -19,7 +33,14 @@ function EditorContent() {
 
   const [tree, setTree] = useState<HypothesisTree | null>(null);
   const [priorityMatrix, setPriorityMatrix] = useState<PriorityMatrix | null>(null);
-  const [activeTab, setActiveTab] = useState<'tree' | 'matrix'>('tree');
+  const [activeTab, setActiveTab] = useState<TabId>('tree');
+  const [matrices, setMatrices] = useState<Record<MatrixType, MatrixData | null>>({
+    hypothesis_prioritization: null,
+    risk_register: null,
+    task_prioritization: null,
+    measurement_priorities: null,
+  });
+  const [loadingMatrices, setLoadingMatrices] = useState<Set<MatrixType>>(new Set());
   const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
   const [isDebugOpen, setIsDebugOpen] = useState(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -34,6 +55,7 @@ function EditorContent() {
     if (projectId) {
       loadProject();
       loadPriorityMatrix();
+      loadAllMatrices();
     } else {
       setLoading(false);
       addDebugLog('No project specified', 'error');
@@ -109,6 +131,59 @@ function EditorContent() {
         addDebugLog(`Failed to load priority matrix: ${error}`, 'error');
         console.error('Failed to load priority matrix:', error);
       }
+    }
+  }
+
+  async function loadAllMatrices() {
+    // Load all 4 matrix types
+    for (const tab of TABS) {
+      if (tab.matrixType) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/matrices/${tab.matrixType}`);
+          if (response.ok) {
+            const data = await response.json();
+            setMatrices(prev => ({ ...prev, [tab.matrixType!]: data.data.content }));
+            addDebugLog(`Loaded ${tab.label}`, 'success');
+          }
+        } catch (error) {
+          // Matrix doesn't exist yet - that's OK
+          addDebugLog(`${tab.label} not found (not yet generated)`, 'info');
+        }
+      }
+    }
+  }
+
+  async function handleGenerateMatrix(matrixType: MatrixType) {
+    setLoadingMatrices(prev => new Set(prev).add(matrixType));
+
+    try {
+      addDebugLog(`Generating ${matrixType} matrix...`, 'info');
+      const response = await fetch(`${API_BASE_URL}/api/projects/${projectId}/matrices/${matrixType}`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setMatrices(prev => ({ ...prev, [matrixType]: data.matrix }));
+        addDebugLog(`Successfully generated ${matrixType} matrix`, 'success');
+      } else {
+        // Safely parse error response (may be HTML or JSON)
+        const errorData = await response.json().catch(() => ({
+          detail: `HTTP ${response.status}: ${response.statusText}`
+        }));
+        addDebugLog(`Failed to generate matrix: ${errorData.detail || 'Unknown error'}`, 'error');
+        alert(`Failed to generate matrix. ${errorData.detail || 'Please check the console for details.'}`);
+      }
+    } catch (error) {
+      console.error('Matrix generation error:', error);
+      addDebugLog(`Matrix generation error: ${error}`, 'error');
+      alert('Failed to generate matrix');
+    } finally {
+      setLoadingMatrices(prev => {
+        const next = new Set(prev);
+        next.delete(matrixType);
+        return next;
+      });
     }
   }
 
@@ -414,26 +489,19 @@ function EditorContent() {
       <div className="flex-1 flex flex-col">
         {/* Tab Switcher */}
         <div className="flex border-b border-gray-800 bg-gray-900">
-          <button
-            className={`px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'tree'
-                ? 'border-b-2 border-blue-500 text-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
-            }`}
-            onClick={() => setActiveTab('tree')}
-          >
-            Hypothesis Tree
-          </button>
-          <button
-            className={`px-4 py-3 text-sm font-medium transition-colors ${
-              activeTab === 'matrix'
-                ? 'border-b-2 border-blue-500 text-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
-            }`}
-            onClick={() => setActiveTab('matrix')}
-          >
-            Priority Matrix
-          </button>
+          {TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`px-4 py-3 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'border-b-2 border-blue-500 text-blue-400 bg-gray-800'
+                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800'
+              }`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         {activeTab === 'tree' && (
@@ -461,44 +529,72 @@ function EditorContent() {
           </>
         )}
 
-        {activeTab === 'matrix' && (
-          <>
-            <MatrixControls
-              zoom={matrixZoom}
-              onZoomIn={handleMatrixZoomIn}
-              onZoomOut={handleMatrixZoomOut}
-              onZoomReset={handleMatrixZoomReset}
-            />
-            <div
-              className="flex-1 overflow-auto p-6"
-              style={{
-                transform: `scale(${matrixZoom})`,
-                transformOrigin: 'top left',
-                width: `${100 / matrixZoom}%`,
-                height: `${100 / matrixZoom}%`
-              }}
-            >
-              {priorityMatrix ? (
-                <Matrix2x2Editor
-                  projectId={projectId}
-                  matrixData={priorityMatrix}
-                  onMatrixUpdate={setPriorityMatrix}
-                  onAddItem={handleAddMatrixItem}
-                  onDeleteItem={handleDeleteMatrixItem}
-                  onEditItem={handleEditMatrixItem}
-                  onMoveItem={handleMoveMatrixItem}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center text-gray-500">
-                    <p className="text-lg mb-2">No Priority Matrix Available</p>
-                    <p className="text-sm">Generate a new project to see the priority matrix</p>
+        {activeTab !== 'tree' && (() => {
+          const tab = TABS.find(t => t.id === activeTab);
+          if (!tab || !tab.matrixType) return null;
+
+          const matrixType = tab.matrixType;
+          const matrixData = matrices[matrixType];
+          const isLoading = loadingMatrices.has(matrixType);
+
+          return (
+            <>
+              <MatrixControls
+                zoom={matrixZoom}
+                onZoomIn={handleMatrixZoomIn}
+                onZoomOut={handleMatrixZoomOut}
+                onZoomReset={handleMatrixZoomReset}
+              />
+              <div
+                className="flex-1 overflow-auto p-6"
+                style={{
+                  transform: `scale(${matrixZoom})`,
+                  transformOrigin: 'top left',
+                  width: `${100 / matrixZoom}%`,
+                  height: `${100 / matrixZoom}%`
+                }}
+              >
+                {matrixData ? (
+                  <Matrix2x2Editor
+                    projectId={projectId}
+                    matrixType={matrixType}
+                    matrixData={matrixData}
+                    onMatrixUpdate={(updated) => {
+                      setMatrices(prev => ({ ...prev, [matrixType]: updated }));
+                    }}
+                    onAddItem={async (quadrant, item) => {
+                      // Placeholder - would need to implement proper API calls
+                      addDebugLog(`Added item to ${quadrant} in ${matrixType}`, 'success');
+                    }}
+                    onDeleteItem={async (quadrant, itemIndex) => {
+                      addDebugLog(`Deleted item from ${quadrant} in ${matrixType}`, 'success');
+                    }}
+                    onEditItem={async (quadrant, itemIndex, newText) => {
+                      addDebugLog(`Edited item in ${quadrant} in ${matrixType}`, 'success');
+                    }}
+                    onMoveItem={async (fromQuadrant, toQuadrant, itemIndex) => {
+                      addDebugLog(`Moved item from ${fromQuadrant} to ${toQuadrant} in ${matrixType}`, 'success');
+                    }}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center text-gray-500">
+                      <p className="text-lg mb-4">{tab.label} Not Generated</p>
+                      <p className="text-sm mb-4">Generate this matrix from your hypothesis tree</p>
+                      <button
+                        onClick={() => handleGenerateMatrix(matrixType)}
+                        disabled={isLoading}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded disabled:bg-gray-600 disabled:cursor-not-allowed"
+                      >
+                        {isLoading ? 'Generating...' : `Generate ${tab.label}`}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </>
-        )}
+                )}
+              </div>
+            </>
+          );
+        })()}
 
         {/* Debug Panel - Collapsible bottom */}
         <DebugPanel

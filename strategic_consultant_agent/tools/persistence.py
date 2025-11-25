@@ -280,6 +280,47 @@ def delete_analysis(
     return {"deleted": True, "filepath": str(filepath)}
 
 
+def delete_project(
+    project_name: str,
+    storage_dir: Optional[str] = None,
+) -> Dict:
+    """
+    Delete an entire project directory and all its contents.
+
+    Args:
+        project_name: Project name to delete
+        storage_dir: Optional custom storage directory
+
+    Returns:
+        dict: {"deleted": bool, "project_dir": str, "files_deleted": int}
+    """
+    import shutil
+
+    # Sanitize project name
+    safe_project_name = _sanitize_filename(project_name)
+
+    # Determine storage directory
+    base_dir = Path(storage_dir) if storage_dir else DEFAULT_STORAGE_DIR
+    project_dir = base_dir / safe_project_name
+
+    if not project_dir.exists():
+        raise FileNotFoundError(
+            f"Project '{project_name}' not found"
+        )
+
+    # Count files before deletion
+    files_deleted = sum(1 for _ in project_dir.rglob("*") if _.is_file())
+
+    # Delete entire project directory
+    shutil.rmtree(project_dir)
+
+    return {
+        "deleted": True,
+        "project_dir": str(project_dir),
+        "files_deleted": files_deleted
+    }
+
+
 def get_latest_version(
     project_name: str, analysis_type: str, storage_dir: Optional[str] = None
 ) -> int:

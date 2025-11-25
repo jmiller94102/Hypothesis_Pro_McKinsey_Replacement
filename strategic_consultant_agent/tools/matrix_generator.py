@@ -2,9 +2,11 @@
 
 import json
 import os
+import time
 from typing import Dict, List, Optional
 
 import google.generativeai as genai
+from google.api_core import exceptions as google_exceptions
 
 from strategic_consultant_agent.config.matrix_types import (
     get_matrix_type_config,
@@ -14,6 +16,7 @@ from strategic_consultant_agent.prompts.matrix_generation import (
     RISK_REGISTER_PROMPT,
     TASK_PRIORITIZATION_PROMPT,
     MEASUREMENT_PRIORITIES_PROMPT,
+    HYPOTHESIS_PRIORITIZATION_PROMPT,
 )
 
 
@@ -22,11 +25,90 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
 
+# Model fallback order (from preferred to fallback)
+# Using actual available models from the API
+MODEL_FALLBACK_ORDER = [
+    "gemini-2.5-flash",           # Latest flash model with good limits
+    "gemini-flash-latest",        # Alias for latest flash
+    "gemini-2.0-flash",           # Stable flash model
+    "gemini-2.0-flash-lite",      # Lighter version with higher limits
+    "gemini-pro-latest",          # Latest pro model (more capable but slower)
+    "gemini-2.5-pro",             # Specific pro version
+]
+
+
+def _call_gemini_with_fallback(
+    prompt: str,
+    generation_config: genai.GenerationConfig,
+    max_retries: int = 3,
+) -> str:
+    """
+    Call Gemini API with automatic model fallback and retry logic.
+
+    Tries models in order from MODEL_FALLBACK_ORDER until one succeeds.
+    Handles rate limits with exponential backoff.
+
+    Args:
+        prompt: The prompt to send to the model
+        generation_config: Generation configuration
+        max_retries: Maximum retry attempts per model
+
+    Returns:
+        str: The model's response text
+
+    Raises:
+        ValueError: If all models fail
+    """
+    last_error = None
+
+    for model_name in MODEL_FALLBACK_ORDER:
+        print(f"Trying model: {model_name}")
+
+        for attempt in range(max_retries):
+            try:
+                model = genai.GenerativeModel(model_name)
+                response = model.generate_content(prompt, generation_config=generation_config)
+                print(f"Success with model: {model_name}")
+                return response.text
+
+            except google_exceptions.ResourceExhausted as e:
+                # Rate limit hit - wait and retry
+                wait_time = (2 ** attempt) * 1  # Exponential backoff: 1s, 2s, 4s
+                print(f"Rate limit hit for {model_name}, waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
+                last_error = e
+                if attempt < max_retries - 1:
+                    time.sleep(wait_time)
+                # If last retry, move to next model
+
+            except google_exceptions.NotFound as e:
+                # Model not found - try next model immediately
+                print(f"Model {model_name} not found, trying next model")
+                last_error = e
+                break
+
+            except google_exceptions.InvalidArgument as e:
+                # Invalid request - try next model
+                print(f"Invalid argument for {model_name}, trying next model")
+                last_error = e
+                break
+
+            except Exception as e:
+                # Other errors - try next model
+                print(f"Error with {model_name}: {e}, trying next model")
+                last_error = e
+                break
+
+    # All models failed
+    raise ValueError(
+        f"All Gemini models failed. Last error: {last_error}. "
+        f"Please check your API key and quota limits at https://ai.google.dev/usage"
+    )
+
 
 def generate_matrix_from_tree(
     hypothesis_tree: Dict,
     matrix_type: str,
-    model_name: str = "gemini-2.0-flash-exp",
+    model_name: str = "gemini-1.5-flash",
 ) -> Dict:
     """
     Generate a 2x2 matrix using AI based on a hypothesis tree.
@@ -45,16 +127,13 @@ def generate_matrix_from_tree(
 
     # Get the appropriate prompt
     prompt_map = {
+        "hypothesis_prioritization": HYPOTHESIS_PRIORITIZATION_PROMPT,
         "risk_register": RISK_REGISTER_PROMPT,
         "task_prioritization": TASK_PRIORITIZATION_PROMPT,
         "measurement_priorities": MEASUREMENT_PRIORITIES_PROMPT,
     }
 
-    # For hypothesis_prioritization, use existing logic (auto-populate from L3 leaves)
-    if matrix_type == "hypothesis_prioritization":
-        return _generate_hypothesis_prioritization_matrix(hypothesis_tree, config)
-
-    # For other types, use AI generation
+    # Use AI generation for all matrix types
     if matrix_type not in prompt_map:
         raise ValueError(
             f"Matrix type '{matrix_type}' does not support AI generation yet"
@@ -63,19 +142,17 @@ def generate_matrix_from_tree(
     prompt_template = prompt_map[matrix_type]
     prompt = prompt_template.format(hypothesis_tree=json.dumps(hypothesis_tree, indent=2))
 
-    # Call Gemini
-    model = genai.GenerativeModel(model_name)
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.GenerationConfig(
-            temperature=0.7,
-            response_mime_type="application/json",
-        ),
+    # Call Gemini with automatic fallback
+    generation_config = genai.GenerationConfig(
+        temperature=0.7,
+        response_mime_type="application/json",
     )
+
+    response_text = _call_gemini_with_fallback(prompt, generation_config)
 
     # Parse AI response
     try:
-        ai_data = json.loads(response.text)
+        ai_data = json.loads(response_text)
     except json.JSONDecodeError as e:
         raise ValueError(f"Failed to parse AI response as JSON: {e}")
 
@@ -162,6 +239,7 @@ def _transform_ai_response_to_matrix(
     """
     # Determine the data key based on matrix type
     data_key_map = {
+        "hypothesis_prioritization": "hypotheses",
         "risk_register": "risks",
         "task_prioritization": "tasks",
         "measurement_priorities": "metrics",
@@ -183,13 +261,15 @@ def _transform_ai_response_to_matrix(
         if quadrant not in placements:
             quadrant = "Q1"  # Default to Q1 if invalid
 
-        # Extract the item label (risk/task/metric description)
+        # Extract the item label (risk/task/metric/hypothesis description)
         if matrix_type == "risk_register":
             label = item.get("risk", "Unknown risk")
         elif matrix_type == "task_prioritization":
             label = item.get("task", "Unknown task")
         elif matrix_type == "measurement_priorities":
             label = item.get("metric", "Unknown metric")
+        elif matrix_type == "hypothesis_prioritization":
+            label = item.get("hypothesis", "Unknown hypothesis")
         else:
             label = str(item)
 
@@ -210,7 +290,7 @@ def regenerate_matrix_item(
     matrix_type: str,
     quadrant: str,
     item_text: str,
-    model_name: str = "gemini-2.0-flash-exp",
+    model_name: str = "gemini-1.5-flash",
 ) -> str:
     """
     Regenerate or refine a single matrix item using AI.
@@ -246,10 +326,7 @@ Provide an improved, more specific version of this item that:
 Return ONLY the improved item text, no JSON, no explanation.
 """
 
-    model = genai.GenerativeModel(model_name)
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.GenerationConfig(temperature=0.7),
-    )
+    generation_config = genai.GenerationConfig(temperature=0.7)
+    response_text = _call_gemini_with_fallback(prompt, generation_config)
 
-    return response.text.strip()
+    return response_text.strip()

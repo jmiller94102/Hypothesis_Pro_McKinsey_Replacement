@@ -230,16 +230,38 @@ export default function HomePage() {
             ) : (
               <div className="space-y-3">
                 {projects.map((project) => (
-                  <button
+                  <div
                     key={project.name}
-                    onClick={() => loadProject(project.name)}
-                    className="w-full text-left px-4 py-3 bg-gray-800 hover:bg-gray-750 rounded-md border border-gray-700 hover:border-gray-600 transition-colors"
+                    className="flex gap-2 items-stretch"
                   >
-                    <div className="font-medium">{project.problem}</div>
-                    <div className="text-sm text-gray-400 mt-1">
-                      v{project.latest_version} • {new Date(project.last_updated).toLocaleDateString()}
-                    </div>
-                  </button>
+                    <button
+                      onClick={() => loadProject(project.name)}
+                      className="flex-1 text-left px-4 py-3 bg-gray-800 hover:bg-gray-750 rounded-md border border-gray-700 hover:border-gray-600 transition-colors"
+                    >
+                      <div className="font-medium">{project.problem}</div>
+                      <div className="text-sm text-gray-400 mt-1">
+                        v{project.latest_version} • {new Date(project.last_updated).toLocaleDateString()}
+                      </div>
+                    </button>
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!confirm(`Delete project "${project.problem}"? This cannot be undone.`)) return;
+
+                        try {
+                          await api.deleteProject(project.name);
+                          await loadData(); // Refresh the project list
+                        } catch (error) {
+                          console.error('Failed to delete project:', error);
+                          alert('Failed to delete project');
+                        }
+                      }}
+                      className="px-3 py-2 bg-red-900 hover:bg-red-800 rounded-md border border-red-700 hover:border-red-600 transition-colors text-sm"
+                      title="Delete project"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 ))}
               </div>
             )}

@@ -153,11 +153,12 @@ def generate_l1_category_batch(
    - ✓ Good: "What is the measured reduction in fall incidents?"
    - ✗ Bad: Long paragraphs with vendor references
 
-4. **Targets**: Include benchmarks and citations HERE (not in labels)
-   - ✓ Good: ">25% reduction vs baseline (KLAS 2024 benchmark)"
+4. **Targets**: Include benchmarks and generic citations (NO vendor/company names)
+   - ✓ Good: ">25% reduction vs baseline (industry benchmark 2024)"
+   - ✗ Bad: ">25% reduction (Teton.ai reports 67-83%)", "SafelyYou benchmark"
 
-5. **Data Sources**: Put vendor names HERE (not in labels/questions)
-   - ✓ Good: "Pilot logs, Teton.ai case study, KLAS 2024 report"
+5. **Data Sources**: Put vendor names HERE only (not in labels/questions/targets)
+   - ✓ Good: "Pilot logs, vendor case studies, industry reports"
 
 **Output Format (JSON):**
 Return a JSON object where:
@@ -180,7 +181,7 @@ Each L3 leaf must contain:
       "label": "Fall Incident Reduction",
       "question": "What is the measured reduction in fall incidents?",
       "metric_type": "quantitative",
-      "target": ">25% reduction vs baseline (KLAS 2024)",
+      "target": ">25% reduction vs baseline (industry benchmark 2024)",
       "data_source": "Pilot logs, ER visit logs, vendor case studies",
       "assessment_criteria": "Compare pre/post incident rates"
     }},

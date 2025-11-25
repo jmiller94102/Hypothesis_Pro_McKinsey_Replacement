@@ -3,6 +3,9 @@
 Provides REST API endpoints for tree generation, validation, and persistence.
 """
 
+# CRITICAL: Initialize tracing BEFORE any LLM imports
+from strategic_consultant_agent import tracing  # noqa: F401
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -16,8 +19,17 @@ import uuid
 
 from strategic_consultant_agent.tools.hypothesis_tree import generate_hypothesis_tree
 from strategic_consultant_agent.tools.framework_loader import FrameworkLoader
-from strategic_consultant_agent.tools.persistence import save_analysis, load_analysis, _sanitize_filename
+from strategic_consultant_agent.tools.persistence import (
+    save_analysis,
+    load_analysis,
+    _sanitize_filename,
+    save_matrix,
+    load_matrix,
+    list_project_matrices,
+    delete_project
+)
 from strategic_consultant_agent.tools.matrix_2x2 import generate_2x2_matrix
+from strategic_consultant_agent.tools.matrix_generator import generate_matrix_from_tree
 import re
 
 # Import for Google Search research
@@ -731,6 +743,18 @@ async def list_projects():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.delete("/api/projects/{project_id}")
+async def delete_project_endpoint(project_id: str):
+    """Delete an entire project and all its analysis files."""
+    try:
+        result = delete_project(project_id)
+        return {"success": True, "data": result, "status": "success"}
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/matrix/{project_id}")
 async def get_priority_matrix(project_id: str, version: Optional[int] = None):
     """
@@ -1018,6 +1042,181 @@ async def move_matrix_item(request: Request):
         }
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Matrix not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Multi-Matrix Management Endpoints
+
+@app.get("/api/projects/{project_id}/matrices")
+async def get_project_matrices(project_id: str):
+    """
+    List all matrices for a project with metadata.
+
+    Args:
+        project_id: Project UUID
+
+    Returns:
+        dict: {
+            "project_name": str,
+            "matrices": {
+                "hypothesis_prioritization": [{version, timestamp, filepath}, ...],
+                "risk_register": [...],
+                "task_prioritization": [...],
+                "measurement_priorities": [...]
+            },
+            "total_count": int
+        }
+    """
+    try:
+        result = list_project_matrices(project_id)
+        return {
+            "success": True,
+            "data": result,
+            "status": "success"
+        }
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/projects/{project_id}/matrices/{matrix_type}")
+async def get_matrix(project_id: str, matrix_type: str, version: Optional[int] = None):
+    """
+    Get a specific matrix by type.
+
+    Args:
+        project_id: Project UUID
+        matrix_type: One of [hypothesis_prioritization, risk_register,
+                     task_prioritization, measurement_priorities]
+        version: Optional version number (defaults to latest)
+
+    Returns:
+        dict: Matrix data with metadata
+    """
+    try:
+        data = load_matrix(project_id, matrix_type, version=version)
+        return {
+            "success": True,
+            "data": data,
+            "status": "success"
+        }
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Matrix '{matrix_type}' not found for project '{project_id}'"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/projects/{project_id}/matrices/{matrix_type}")
+async def create_matrix(project_id: str, matrix_type: str):
+    """
+    Generate and save a new matrix using AI.
+
+    Args:
+        project_id: Project UUID
+        matrix_type: One of [hypothesis_prioritization, risk_register,
+                     task_prioritization, measurement_priorities]
+
+    Returns:
+        dict: Generated matrix data and save info
+    """
+    try:
+        # Load hypothesis tree
+        tree_data = load_analysis(project_id, "hypothesis_tree")
+        tree = tree_data.get("content")
+
+        if not tree:
+            raise HTTPException(
+                status_code=400,
+                detail="Hypothesis tree not found. Generate tree first."
+            )
+
+        # Generate matrix using AI
+        loop_executor = asyncio.get_event_loop()
+        matrix = await loop_executor.run_in_executor(
+            None,
+            generate_matrix_from_tree,
+            tree,
+            matrix_type
+        )
+
+        # Save matrix
+        save_result = save_matrix(project_id, matrix_type, matrix)
+
+        return {
+            "success": True,
+            "matrix": matrix,
+            "save_info": save_result,
+            "status": "success"
+        }
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.put("/api/projects/{project_id}/matrices/{matrix_type}/items")
+async def update_matrix_items(
+    project_id: str,
+    matrix_type: str,
+    request: Request
+):
+    """
+    Update matrix item placements (for manual editing/drag-drop).
+
+    Request body:
+        {
+            "placements": {
+                "Q1": ["item1", "item2", ...],
+                "Q2": [...],
+                "Q3": [...],
+                "Q4": [...]
+            }
+        }
+
+    Returns:
+        dict: Updated matrix and save info
+    """
+    try:
+        data = await request.json()
+        placements = data.get("placements")
+
+        if not placements:
+            raise HTTPException(status_code=400, detail="Missing 'placements' in request body")
+
+        # Load existing matrix
+        matrix_data = load_matrix(project_id, matrix_type)
+        matrix = matrix_data.get("content")
+
+        if not matrix:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Matrix '{matrix_type}' not found"
+            )
+
+        # Update placements
+        matrix["placements"] = placements
+
+        # Save updated matrix
+        save_result = save_matrix(project_id, matrix_type, matrix)
+
+        return {
+            "success": True,
+            "matrix": matrix,
+            "save_info": save_result,
+            "status": "success"
+        }
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Matrix '{matrix_type}' not found for project '{project_id}'"
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

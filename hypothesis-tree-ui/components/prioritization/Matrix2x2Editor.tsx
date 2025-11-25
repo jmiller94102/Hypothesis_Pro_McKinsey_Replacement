@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { PriorityMatrix } from '@/lib/types';
+import { MatrixData, MatrixType } from '@/lib/types';
 
 interface Matrix2x2EditorProps {
   projectId: string;
-  matrixData: PriorityMatrix;
-  onMatrixUpdate: (updatedMatrix: PriorityMatrix) => void;
+  matrixType: MatrixType;
+  matrixData: MatrixData;
+  onMatrixUpdate: (updatedMatrix: MatrixData) => void;
   onAddItem: (quadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', item: string) => Promise<void>;
   onDeleteItem: (quadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', itemIndex: number) => Promise<void>;
   onEditItem: (quadrant: 'Q1' | 'Q2' | 'Q3' | 'Q4', itemIndex: number, newText: string) => Promise<void>;
@@ -15,6 +16,7 @@ interface Matrix2x2EditorProps {
 
 export function Matrix2x2Editor({
   projectId,
+  matrixType,
   matrixData,
   onMatrixUpdate,
   onAddItem,
@@ -29,6 +31,26 @@ export function Matrix2x2Editor({
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [newItemText, setNewItemText] = useState('');
   const [draggedItem, setDraggedItem] = useState<{ quadrant: string; index: number } | null>(null);
+
+  // Helper function to get color classes based on quadrant color
+  const getColorClasses = (color?: string): { bg: string; border: string } => {
+    switch (color) {
+      case 'green':
+        return { bg: 'bg-green-900/20', border: 'border-2 border-green-600' };
+      case 'yellow':
+        return { bg: 'bg-yellow-900/20', border: 'border-2 border-yellow-600' };
+      case 'red':
+        return { bg: 'bg-red-900/20', border: 'border-2 border-red-600' };
+      case 'blue':
+        return { bg: 'bg-blue-900/20', border: 'border-2 border-blue-600' };
+      case 'orange':
+        return { bg: 'bg-orange-900/20', border: 'border-2 border-orange-600' };
+      case 'purple':
+        return { bg: 'bg-purple-900/20', border: 'border-2 border-purple-600' };
+      default:
+        return { bg: 'bg-gray-700/20', border: 'border-2 border-gray-600' };
+    }
+  };
 
   const handleStartEdit = (quadrant: string, index: number, currentText: string) => {
     setEditingItem({ quadrant, index });
@@ -269,49 +291,61 @@ export function Matrix2x2Editor({
 
       {/* 2x2 Grid */}
       <div className="grid grid-cols-2 grid-rows-2 gap-3 mb-4">
-        {/* Q1: Top-Left (High Y, Low X) - Quick Wins */}
-        {renderQuadrant(
-          'Q1',
-          quadrants.Q1.name,
-          quadrants.Q1.position,
-          quadrants.Q1.description,
-          placements.Q1 || [],
-          'bg-green-900/20',
-          'border-2 border-green-600'
-        )}
+        {/* Q1: Top-Left (High Y, Low X) */}
+        {(() => {
+          const colors = getColorClasses(quadrants.Q1.color);
+          return renderQuadrant(
+            'Q1',
+            quadrants.Q1.name,
+            quadrants.Q1.position,
+            quadrants.Q1.description,
+            placements.Q1 || [],
+            colors.bg,
+            colors.border
+          );
+        })()}
 
-        {/* Q2: Top-Right (High Y, High X) - Strategic Bets */}
-        {renderQuadrant(
-          'Q2',
-          quadrants.Q2.name,
-          quadrants.Q2.position,
-          quadrants.Q2.description,
-          placements.Q2 || [],
-          'bg-yellow-900/20',
-          'border-2 border-yellow-600'
-        )}
+        {/* Q2: Top-Right (High Y, High X) */}
+        {(() => {
+          const colors = getColorClasses(quadrants.Q2.color);
+          return renderQuadrant(
+            'Q2',
+            quadrants.Q2.name,
+            quadrants.Q2.position,
+            quadrants.Q2.description,
+            placements.Q2 || [],
+            colors.bg,
+            colors.border
+          );
+        })()}
 
-        {/* Q3: Bottom-Left (Low Y, Low X) - Fill Later */}
-        {renderQuadrant(
-          'Q3',
-          quadrants.Q3.name,
-          quadrants.Q3.position,
-          quadrants.Q3.description,
-          placements.Q3 || [],
-          'bg-gray-700/20',
-          'border-2 border-gray-600'
-        )}
+        {/* Q3: Bottom-Left (Low Y, Low X) */}
+        {(() => {
+          const colors = getColorClasses(quadrants.Q3.color);
+          return renderQuadrant(
+            'Q3',
+            quadrants.Q3.name,
+            quadrants.Q3.position,
+            quadrants.Q3.description,
+            placements.Q3 || [],
+            colors.bg,
+            colors.border
+          );
+        })()}
 
-        {/* Q4: Bottom-Right (Low Y, High X) - Hard Slogs */}
-        {renderQuadrant(
-          'Q4',
-          quadrants.Q4.name,
-          quadrants.Q4.position,
-          quadrants.Q4.description,
-          placements.Q4 || [],
-          'bg-red-900/20',
-          'border-2 border-red-600'
-        )}
+        {/* Q4: Bottom-Right (Low Y, High X) */}
+        {(() => {
+          const colors = getColorClasses(quadrants.Q4.color);
+          return renderQuadrant(
+            'Q4',
+            quadrants.Q4.name,
+            quadrants.Q4.position,
+            quadrants.Q4.description,
+            placements.Q4 || [],
+            colors.bg,
+            colors.border
+          );
+        })()}
       </div>
 
       {/* Axis Labels */}
