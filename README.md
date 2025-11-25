@@ -262,6 +262,62 @@ response = await runner.run(
 
 ---
 
+## Cloud Deployment
+
+This agent is deployed to **Google Cloud Run** using the Google Agent Starter Pack infrastructure.
+
+### Live Deployment
+
+- **Endpoint**: https://hypothesis-tree-agent-up4ilqcfeq-uc.a.run.app
+- **Dev UI**: https://hypothesis-tree-agent-up4ilqcfeq-uc.a.run.app/dev-ui/
+- **Region**: us-central1
+- **Project**: kaggle-479307
+- **Framework**: Google ADK (Agent Development Kit)
+
+### Deploy Your Own
+
+```bash
+# Prerequisites
+# 1. GCP project with billing enabled
+# 2. gcloud CLI installed and authenticated
+
+# Set your project
+gcloud config set project YOUR_PROJECT_ID
+
+# Enable required APIs
+gcloud services enable aiplatform.googleapis.com run.googleapis.com cloudbuild.googleapis.com
+
+# Deploy using Makefile
+make deploy
+
+# Or deploy directly
+gcloud run deploy hypothesis-tree-agent \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated
+```
+
+### Deployment Architecture
+
+```
+Cloud Run Service (hypothesis-tree-agent)
+├── Dockerfile (Python 3.11 + uv)
+├── strategic_consultant_agent/fast_api_app.py (ADK FastAPI wrapper)
+├── Root Agent (SequentialAgent)
+│   ├── Research Phase (ParallelAgent)
+│   ├── Analysis Phase (LoopAgent)
+│   └── Prioritization Phase
+└── Artifact Storage (GCS bucket)
+```
+
+**Infrastructure Files Added by Agent Starter Pack:**
+- `Dockerfile` - Container definition
+- `Makefile` - Build and deploy commands
+- `.cloudbuild/` - CI/CD pipeline configs
+- `deployment/` - Terraform infrastructure
+
+---
+
 ## Contributing
 
 Contributions welcome! Please read the development documentation in `docs/` before submitting PRs.

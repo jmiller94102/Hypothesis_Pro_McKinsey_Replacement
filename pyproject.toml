@@ -9,7 +9,7 @@ description = "Multi-agent strategic decision support system using Google ADK"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "google-adk>=1.19.0",
+    "google-adk>=1.15.0,<2.0.0",
     "google-genai>=1.0.0",
 ]
 
