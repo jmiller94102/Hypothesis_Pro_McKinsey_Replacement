@@ -61,3 +61,24 @@ hypothesis-tree-ui/build/
 .cache/
 temp/
 tmp/
+
+# Backup directories
+.backup_*/
+
+# Starter pack files (from agent-starter-pack template)
+starter_pack_*.md
+starter_pack_*.toml
+
+# Notebooks (development only)
+notebooks/
+
+# Test directories (if running locally)
+tests/integration/
+tests/load_test/
+tests/unit/
+
+# App utilities (development helpers)
+strategic_consultant_agent/app_utils/
+
+# Gemini instructions (local only)
+GEMINI.md
